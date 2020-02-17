@@ -1,0 +1,16 @@
+/* Styles pour les textes du flash  */
+
+.mauve1 {
+  color: #7D07D6;
+  font: 10px verdana;
+}
+
+.mauve2 {
+  color: #990066;
+  font: 10px verdana;
+}
+
+img.img {
+  width:16px;  
+  height:16px
+}

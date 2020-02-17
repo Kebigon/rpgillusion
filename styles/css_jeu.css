@@ -1,0 +1,242 @@
+/* Base du template*/
+
+select{
+ font-size: 8pt;
+ font-family: Verdana;
+ background-color: #FFF6EB;
+ border: 1px solid #FFA94D
+}
+
+input {
+ font-size: 8pt;
+ font-family: Verdana;
+ background-color: #FFF6EB;
+ border: 1px solid #FFA94D
+}
+
+textarea {
+ font: 11px verdana;
+ border: 1px solid #FFA94D;
+ background-color:#FFF6EB;
+ padding-left:2px
+}
+
+A:visited {
+ color: #B35F21; TEXT-DECORATION: none;
+}
+a:hover  {
+ color: #B35F21;  TEXT-DECORATION: underline;
+}
+A:link {
+ color: #B35F21; TEXT-DECORATION: none;
+}
+A:active {
+ color: #B35F21; TEXT-DECORATION: none;
+}
+
+body { 
+ padding-right: 0px; 
+ padding-left: 0px; 
+ font: 11px verdana;
+ background-image: url(../images/principal/arriereplan.gif); 
+ padding-bottom: 0px; margin: 0px; 
+ padding-top: 0px; 
+ font-family: Verdana, Arial, Helvetica, sans-serif; 
+ top: 0px; 
+}  
+  
+#conteneur {
+ width:767px;
+ margin-left:auto; 
+ margin-right:auto;
+ border:0px solid #000000;
+ margin-top:20px;
+ margin-bottom:20px;
+} 
+
+#header {
+  width:767px;
+  height:102px;
+  background-image:url(../images/principal/entete.jpg);
+  background-repeat:no-repeat
+} 
+
+#flash {
+  width:767px;
+  height:46px;
+  background-color: #FFF9F1
+} 
+
+#centre {
+ margin-bottom: 0px;
+ margin-left:0px;
+ float:left;
+ width: 767px;
+ padding:0px;
+ background-image:url(../images/principal/background-contenu.gif)
+} 
+
+#pied {
+ background-image: url(../images/principal/bas.gif);
+ padding-top:0px;
+ padding-bottom:0px;
+ clear:both;
+ width:767px;
+ height:26px;
+ text-align:right;
+} 
+
+#menu{ 
+ float:left;
+ width: 175px;
+ margin-left:3px;
+} 
+
+#contenu{
+ float:left;
+ width: 578px;
+ margin-left:0px;
+} 
+
+/*Structure intérieur de la page */
+
+#bloc_principal{
+ float:left;
+ width: 390px;
+} 
+
+#bloc_droite{
+ float:left;
+ width: 172px;
+ margin-left:12px; 
+
+} 
+
+#bloc_bas1{
+ float:left;
+ width:190px;
+ height:230px
+} 
+
+#bloc_bas2{
+ float:left;
+ width: 182px;
+ height:230px;
+ margin-left:16px
+}
+
+/*Divers éléments structures */
+
+.padding {
+ padding: 3px;
+ margin: 0px;
+}
+
+/*Element de taille */
+
+.notice {
+ font: 10px verdana;
+ font-style: italic
+}
+
+.taille1 {
+ font: 10px verdana;
+}
+
+/*Police spéciales titres */
+
+#taille2 H1{
+ font-family: 'lucida sans unicode', 'century gothic', verdana, 'bistream vera sans', helvetica;
+ font-size: 20px;
+ font-weight: normal;
+ padding-bottom: 4px; margin: 0px 0px 3px; padding-top: 0px; border-bottom: #dfdfdf 1px solid;
+}
+
+.taille3 H1{
+ font-family: 'lucida sans unicode', 'century gothic', verdana, 'bistream vera sans', helvetica;
+ font-size: 14px;
+ font-weight: normal;
+ padding-bottom: 4px; margin: 0px 0px 3px; padding-top: 0px; border-bottom: #dfdfdf 1px solid;
+ color : #A42885
+}
+
+/*Elements couleurs */  
+
+.rose1 {
+ background-color: #FFDFF3
+}
+
+.rose2 {
+ background-color: #FFF2FA
+}
+
+.rose3 {
+ color: #CC0099;
+}
+
+.rose4 {
+ color: #9C0E79;
+}
+
+.rose5 {
+ color: #D7006B;
+}
+
+.mauve1 {
+ color: #6905A5;
+}
+
+.mauve2 {
+ color: #CC00CC
+}
+
+.marron1 {
+ color: #A0570E;
+ font-weight: bold
+}
+
+.marron2 {
+ color: #B35F21;
+ font-weight: normal
+} 
+
+.rouge1 {
+ color: #DA4A12
+}
+
+.alerte {
+  color: #cc0000;
+  font-weight: bold
+}
+
+/*Elements divers */
+
+.arriere_plan {
+ background-image:url(../images/login/fondperso.jpg);
+ background-repeat: no-repeat;
+ background-position: center top
+}
+
+.no_bordure {
+ border: 0 none;
+}
+
+.alerte_session {
+ background-color: #FF6666;
+ width:155px;
+ border:1px solid;
+}
+
+.bloc_rose{
+ background-color: #FFF2FA;
+ width:568px;
+ min-height: 40px;
+ border:1px solid;
+ overflow:auto;
+}
+
+.avatar_menu{
+ background-repeat: no-repeat;
+ background-position: right top;
+ margin-right:18px;
+}

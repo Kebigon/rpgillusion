@@ -1,1337 +1,1335 @@
-<?php // admin.php :: Administration du script.
+<?php // admin.php :: Adminstration du jeu.
 
-include('./lib.php');
-include('./cookies.php');
+error_reporting(E_ALL);
+session_start();
+
+include('kernel/functions.php');
+include('kernel/display.php');
+include('class/bbcode.php');
+
 $link = opendb();
-$userrow = checkcookies();
-if ($userrow == false) { die("Merci de vous loger dans le <a href=\"./login.php?do=login\">jeu</a> avant d'utiliser le panneau de commande."); }
-if ($userrow["authlevel"] != 1) { die("Vous devez avoir des privilèges d'administrateur pour employer le panneau de commande."); }
+$page ='<img src="images/jeu/actions/administration.jpg" width="580" height="82" alt="Administration"><br><br>';
+
 $controlquery = doquery("SELECT * FROM {{table}} WHERE id='1' LIMIT 1", "control");
 $controlrow = mysql_fetch_array($controlquery);
 
-if (isset($_GET["do"])) {
-    $do = explode(":",$_GET["do"]);
-    
-    if ($do[0] == "main") { main(); }
-    elseif ($do[0] == "items") { items(); }
-    elseif ($do[0] == "edititem") { edititem($do[1]); }
-    elseif ($do[0] == "drops") { drops(); }
-    elseif ($do[0] == "editdrop") { editdrop($do[1]); }
-    elseif ($do[0] == "towns") { towns(); }
-    elseif ($do[0] == "edittown") { edittown($do[1]); }
-    elseif ($do[0] == "monsters") { monsters(); }
-    elseif ($do[0] == "editmonster") { editmonster($do[1]); }
-    elseif ($do[0] == "levels") { levels(); }
-    elseif ($do[0] == "editlevel") { editlevel(); }
-    elseif ($do[0] == "spells") { spells(); }
-    elseif ($do[0] == "editspell") { editspell($do[1]); }
-    elseif ($do[0] == "users") { users(); }
-    elseif ($do[0] == "edituser") { edituser($do[1]); }
-    elseif ($do[0] == "news") { addnews(); }
-    elseif ($do[0] == "sondage") { addsondage(); }
-    elseif ($do[0] == "blocs") { blocs(); }
-	elseif ($do[0] == "babble") { babble(); }
-    elseif ($do[0] == "message") { message(); }
-    elseif ($do[0] == "newsaccueil") { newsaccueil(); }
-	elseif ($do[0] == "carte") { carte(); }
-    elseif ($do[0] == "visu_map") { visu_map(); }
-    
-} else { donothing(); }
-
-function donothing() {
-    
-    $page = "Bienvenue sur la page d'admin de RPG illusion. Ici vous pouvez modifier ou éditer librement plusieurs paramètres. <br><br> En cas de problème, veuillez contactez l'auteur de script à cette adresse : webmaster@rpgillusion.com<br><br><br><center><img src=\"./images/im_admin.gif\"/><br><br>Pour que RPG illusion perdure et que nous puissions financer de meilleurs services, nous vous invitons à faire un don du montant de votre choix. <font color=cc0000><b>Ceci est très important, car sans ces donations, le RPG pourrait <u>perdre sa licence open source et devenir payant</u> pour financer le développement du jeu.</b></font></span><br><br>
-	<form action=https://www.paypal.com/cgi-bin/webscr method=post>
-<input type=hidden name=cmd value=_xclick>
-<input type=hidden name=business value=ffstory1@hotmail.com>
-<input type=hidden name=item_name value=RPG illusion donation>
-<input type=hidden name=no_note value=1>
-<input type=hidden name=currency_code value=EUR>
-<input type=hidden name=tax value=0>
-<input type=hidden name=bn value=PP-DonationsBF>
-<input type=image src=https://www.paypal.com/fr_FR/i/btn/x-click-but21.gif border=0 name=submit alt=Effectuez vos paiements via PayPal : une solution rapide, gratuite et sécurisée !>
-</form>
-	</center>";
-	
-	admindisplay($page, "Administration");
-    
+if ($_SESSION == true) {
+$userquery = doquery("SELECT authlevel, email FROM {{table}} WHERE id='".addslashes($_SESSION['id'])."' LIMIT 1", "users");
+$userrow = mysql_fetch_array($userquery);
+}else{
+$userrow = null;
 }
 
-function main() {
-    
-    if (isset($_POST["submit"])) {
+if ($userrow == false) { die('Identifiez vous à cette adresse : <a href="../login.php?do=login">game</a>, pour pouvoir accéder au panneau d\'administration.'); }
+if ($userrow["authlevel"] != 1) { die('Vous devez avoir les privilèges d\'administrateur pour accéder au panneau d\'administration.'); }
+
+if(isset($_GET["do"])) {
+  $do = explode(":",$_GET["do"]);
+  switch ($do[0]) {
+  case 'main': main(); break;
+  case 'items': items(); break;
+  case 'edititem': edititem($do[1]); break;
+  case 'drops': drops(); break;
+  case 'editdrop': editdrop($do[1]); break;
+  case 'towns': towns(); break;
+  case 'edittown': edittown($do[1]); break;
+  case 'monsters': monsters(); break;
+  case 'editmonster': editmonster($do[1]); break;
+  case 'spells': spells(); break;
+  case 'editspell': editspell($do[1]); break;
+  case 'levels': levels(); break;
+  case 'editlevel': editlevel(); break;
+  case 'users': users(); break;
+  case 'edituser': edituser($do[1]); break;
+  case 'addnews': addnews(); break;
+  case 'addpoll': addpoll(); break;
+  case 'addnewsletter': addnewsletter(); break;
+  case 'editpartner': editpartner(); break;
+  case 'editcopyright': editcopyright(); break;
+  case 'editbabblebox': editbabblebox(); break;
+  case 'editmenuusers': editmenuusers(); break;
+  }  
+} 
+
+function main() {//Réglages principaux.
+
+global $controlrow, $page;
+   
+     if (isset($_POST['submit'])) {
         extract($_POST);
         $errors = 0;
         $errorlist = "";
-        if ($gamename == "") { $errors++; $errorlist .= "Le nom de jeu est exigé.<br />"; }
-        if (($gamesize % 5) != 0) { $errors++; $errorlist .= "La taille de carte doit être divisible par cinq.<br />"; }
-        if (!is_numeric($gamesize)) { $errors++; $errorlist .= "La taille de la carte doit être un nombre.<br />"; }
-        if ($forumtype == 2 && $forumaddress == "") { $errors++; $errorlist .= "Vous devez indiquer l'adresse du forum externe.<br />"; }
-        if ($class1name == "") { $errors++; $errorlist .= "Le nom de la classe 1 est exigé.<br />"; }
-        if ($class2name == "") { $errors++; $errorlist .= "Le nom de la classe 2 est exigé.<br />"; }
-        if ($class3name == "") { $errors++; $errorlist .= "Le nom de la classe 3 est exigé.<br />"; }
-        if ($diff1name == "") { $errors++; $errorlist .= "Le nom de la difficulté 1 est exigé.<br />"; }
-        if ($diff2name == "") { $errors++; $errorlist .= "Le nom de la difficulté 2 est exigé.<br />"; }
-        if ($diff3name == "") { $errors++; $errorlist .= "Le nom de la difficulté 3 est exigé.<br />"; }
-        if ($diff2mod == "") { $errors++; $errorlist .= "La valeur de la difficulté 2 est exigée.<br />"; }
-        if ($diff3mod == "") { $errors++; $errorlist .= "La valeur de la difficulté 3 est exigée.<br />"; }
-        
-		$gamename = addslashes($gamename);
+        if (trim($gamename) == "") { $errors++; $errorlist .= "- Le nom de jeu est exigé.<br>"; }
+		if (trim($gameurl) == "") { $errors++; $errorlist .= "- L'url du jeu est exigé.<br>"; }
+        if (($gamesize % 5) != 0) { $errors++; $errorlist .= "- La taille de carte doit être divisible par cinq.<br>"; }
+        if (!is_numeric($gamesize)) { $errors++; $errorlist .= "- La taille de la carte doit être un nombre.<br>"; }
+        if (trim($class1name) == "") { $errors++; $errorlist .= "- Le nom de la classe 1 est exigé.<br>"; }
+        if (trim($class2name) == "") { $errors++; $errorlist .= "- Le nom de la classe 2 est exigé.<br>"; }
+        if (trim($class3name) == "") { $errors++; $errorlist .= "- Le nom de la classe 3 est exigé.<br>"; }
+        if (trim($diff1name) == "") { $errors++; $errorlist .= "- Le nom de la difficulté 1 est exigé.<br>"; }
+        if (trim($diff2name) == "") { $errors++; $errorlist .= "- Le nom de la difficulté 2 est exigé.<br>"; }
+        if (trim($diff3name) == "") { $errors++; $errorlist .= "- Le nom de la difficulté 3 est exigé.<br>"; }
+        if (trim($diff2mod) == "") { $errors++; $errorlist .= "- La valeur de la difficulté 2 est exigée.<br>"; }
+        if (trim($diff3mod) == "") { $errors++; $errorlist .= "- La valeur de la difficulté 3 est exigée.<br>"; }
+		if (preg_match("/[\^*+<>?#]/", $gamename)==1) { $errors++; $errorlist .= "- Le nom du jeu doit être écrit en caractères alphanumériques.<br>"; }
+        if (preg_match("/[\^*+<>?#]/", $class1name)==1) { $errors++; $errorlist .= "- Le nom de la classe 1 doit être écrit en caractères alphanumériques.<br>"; }
+        if (preg_match("/[\^*+<>?#]/", $class2name)==1) { $errors++; $errorlist .= "- Le nom de la classe 2 doit être écrit en caractères alphanumériques.<br>"; }
+   		if (preg_match("/[\^*+<>?#]/", $class3name)==1) { $errors++; $errorlist .= "- Le nom de la classe 3 doit être écrit en caractères alphanumériques.<br>"; }
+		if (preg_match("/[\^*+<>?#]/", $diff1name)==1) { $errors++; $errorlist .= "- Le nom de la difficulté 1 doit être écrit en caractères alphanumériques.<br>"; }
+		if (preg_match("/[\^*+<>?#]/", $diff2name)==1) { $errors++; $errorlist .= "- Le nom de la difficulté 2 doit être écrit en caractères alphanumériques.<br>"; }
+		if (preg_match("/[\^*+<>?#]/", $diff3name)==1) { $errors++; $errorlist .= "- Le nom de la difficulté 3 doit être écrit en caractères alphanumériques.<br>"; }
+
         if ($errors == 0) { 
 		
-            $query = doquery("UPDATE {{table}} SET gamename='$gamename',gamesize='$gamesize',forumtype='$forumtype',forumaddress='$forumaddress',compression='$compression',class1name='$class1name',class2name='$class2name',class3name='$class3name',diff1name='$diff1name',diff2name='$diff2name',diff3name='$diff3name',diff2mod='$diff2mod',diff3mod='$diff3mod',gameopen='$gameopen',verifyemail='$verifyemail',gameurl='$gameurl',adminemail='$adminemail',shownews='$shownews',showonline='$showonline',showbabble='$showbabble' WHERE id='1' LIMIT 1", "control");
-            admindisplay("Réglages mis à jour.","Main Settings");
+            $update = doquery("UPDATE {{table}} SET gamename='".addslashes($gamename)."',gamesize='$gamesize',compression='$compression',class1name='".addslashes($class1name)."',class2name='".addslashes($class2name)."',class3name='".addslashes($class3name)."',diff1name='".addslashes($diff1name)."',diff2name='".addslashes($diff2name)."',diff3name='".addslashes($diff3name)."',showbabble='$showbabble',showonline='$showonline',diff2mod='$diff2mod',diff3mod='$diff3mod',gameopen='$gameopen',verifyemail='$verifyemail',gameurl='$gameurl',adminemail='".addslashes($adminemail)."' WHERE id='1' LIMIT 1", "control");
+            $page .='Les réglages principaux ont été mis à jours!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
         } else {
-            admindisplay("<b>Erreurs:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Menu des réglages");
+            $page .= 'La mise à jour n\'a pas pu se faire, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=main">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
         }
-    }
-    
-    global $controlrow;
-    
-$page = <<<END
-<b><u>Menu des réglages</u></b><br />
-Ces options commandent plusieurs paramètres principaux du jeu.<br /><br />
-<form action="admin.php?do=main" method="post">
-<table width="90%">
-<tr><td width="20%"><span class="highlight">Statut du jeu:</span></td><td><select name="gameopen"><option value="1" {{open1select}}>Ouvert</option><option value="0" {{open0select}}>Fermé</option></select><br /><span class="small">Fermez le jeu si vous êtes faites de la maintance dessus.</span></td></tr>
-<tr><td width="20%">Nom du jeu:</td><td><input type="text" name="gamename" size="30" maxlength="50" value="{{gamename}}" /><br /><span class="small">Le nom du jeu par default est "RPG illusion". Mais vous pouvez librement le modifier.</span></td></tr>
-<tr><td width="20%">URL du jeu:</td><td><input type="text" name="gameurl" size="50" maxlength="100" value="{{gameurl}}" /><br /><span class="small">Veuillez indiquer l'URL complète du jeu("http://www.votre_site.com/repertoire_du_jeu/index.php").</span></td></tr>
-<tr><td width="20%">Email de l'admin:</td><td><input type="text" name="adminemail" size="30" maxlength="100" value="{{adminemail}}" /><br /><span class="small">Veuillez indiquer votre adresse email.  Les utilisateurs qui auront besoin d'aide utiliseront cette adresse pour vous écrire.</span></td></tr>
-<tr><td width="20%">Taille de la carte:</td><td><input type="text" name="gamesize" size="3" maxlength="3" value="{{gamesize}}" /><br /><span class="small">250 par défault. C'est la taille de la carte en longitude et en latitude. Notez aussi que les niveaux des monstres augmentent tous les 5 espaces, ainsi vous devriez vous assurer que la valeur actuelle de la carte est supérieur à 5. Sinon il y aura quasiment aucun monstre. Avec une taille de carte de 250, vous devriez avoir le total de 50 niveaux de monstre.</span></td></tr>
-<tr><td width="20%">Type du forum:</td><td><select name="forumtype"><option value="0" {{selecttype0}}>Aucun</option><option value="1" {{selecttype1}}>Interne</option><option value="2" {{selecttype2}}>Externe</option></select><br /><span class="small">'Aucun' retire le forum du jeu. 'Interne' utilise le forum inclus dans RPG illusion. 'Externe' utilise un forum qui se situe à l'exterieur du jeu. Pour cela vous devrez indiquer une URL ci dessous.</span></td></tr>
-<tr><td width="20%">Forum externe:</td><td><input type="text" name="forumaddress" size="30" maxlength="200" value="{{forumaddress}}" /><br /><span class="small">Si la valeur ci-dessus est placée à 'Externe,' veuillez indiquer l'URL complète du forum externe.</span></td></tr>
-<tr><td width="20%">Pages compressée:</td><td><select name="compression"><option value="0" {{selectcomp0}}>Aucune</option><option value="1" {{selectcomp1}}>Activé</option></select><br /><span class="small">Si vous compressez les pages du jeu, ceci réduira considérablement la quantité de largeur de bande passante exigée par le jeu.</span></td></tr>
-<tr><td width="20%">Email de vérification:</td><td><select name="verifyemail"><option value="0" {{selectverify0}}>Aucun</option><option value="1" {{selectverify1}}>Activé</option></select><br /><span class="small">Incitez les utilisateurs à vérifier leur adresse email pour plus de sécuritée.</span></td></tr>
-<tr><td width="20%">Afficher la nouvelle:</td><td><select name="shownews"><option value="0" {{selectnews0}}>Non</option><option value="1" {{selectnews1}}>Oui</option></select><br /><span class="small">Afficher la dernière nouvelle dans les villes.</td></tr>
-<tr><td width="20%">Afficher "Qui est en ligne?":</td><td><select name="showonline"><option value="0" {{selectonline0}}>Non</option><option value="1" {{selectonline1}}>Oui</option></select><br /><span class="small">Afficher "Qui est en ligne?" dans les villes.</span></td></tr>
-<tr><td width="20%">Afficher la boite de dialogue:</td><td><select name="showbabble"><option value="0" {{selectbabble0}}>Non</option><option value="1" {{selectbabble1}}>Oui</option></select><br /><span class="small">Afficher la boite de dialogue dans les villes.</span></td></tr>
-<tr><td width="20%">Nom de la classe 1:</td><td><input type="text" name="class1name" size="20" maxlength="50" value="{{class1name}}" /><br /></td></tr>
-<tr><td width="20%">Nom de la classe 2:</td><td><input type="text" name="class2name" size="20" maxlength="50" value="{{class2name}}" /><br /></td></tr>
-<tr><td width="20%">Nom de la classe 3:</td><td><input type="text" name="class3name" size="20" maxlength="50" value="{{class3name}}" /><br /></td></tr>
-<tr><td width="20%">Nom de la difficulté 1:</td><td><input type="text" name="diff1name" size="20" maxlength="50" value="{{diff1name}}" /><br /></td></tr>
-<tr><td width="20%">Nom de la difficulté 2:</td><td><input type="text" name="diff2name" size="20" maxlength="50" value="{{diff2name}}" /><br /></td></tr>
-<tr><td width="20%">Valeur de la difficulté 1:</td><td><input type="text" name="diff2mod" size="3" maxlength="3" value="{{diff2mod}}" /><br /><span class="small">1.2 par défault. Indiquez une valeur pour la difficultée moyenne ici.</span></td></tr>
-<tr><td width="20%">Nom de la difficulté 3:</td><td><input type="text" name="diff3name" size="20" maxlength="50" value="{{diff3name}}" /><br /></td></tr>
-<tr><td width="20%">Valeur De la difficulté 3:</td><td><input type="text" name="diff3mod" size="3" maxlength="3" value="{{diff3mod}}" /><br /><span class="small">1.5 par défault. Indiquez une valeur pour la difficultée la plus haute ici.</span></td></tr>
+    } else
+  { 
+
+    if ($controlrow['compression'] == 0) { $controlrow['selectcomp0'] = 'selected="selected" '; } else { $controlrow['selectcomp0'] = ""; }
+    if ($controlrow['compression'] == 1) { $controlrow['selectcomp1'] = 'selected="selected" '; } else { $controlrow['selectcomp1'] = ""; }
+    if ($controlrow['verifyemail'] == 0) { $controlrow['selectverify0'] = 'selected="selected" '; } else { $controlrow['selectverify0'] = ""; }
+    if ($controlrow['verifyemail'] == 1) { $controlrow['selectverify1'] = 'selected="selected" '; } else { $controlrow['selectverify1'] = ""; }
+    if ($controlrow['gameopen'] == 1) { $controlrow['open1select'] = 'selected="selected" '; } else { $controlrow['open1select'] = ""; }
+    if ($controlrow['gameopen'] == 0) { $controlrow['open0select'] = 'selected="selected" '; } else { $controlrow['open0select'] = ""; }
+    if ($controlrow["showbabble"] == 0) { $controlrow["selectbabble0"] = 'selected="selected" '; } else { $controlrow['selectbabble0'] = ""; }
+    if ($controlrow["showbabble"] == 1) { $controlrow["selectbabble1"] = 'selected="selected" '; } else { $controlrow['selectbabble1'] = ""; }
+    if ($controlrow["showonline"] == 0) { $controlrow["selectonline0"] = 'selected="selected" '; } else { $controlrow["selectonline0"] = ""; }
+    if ($controlrow["showonline"] == 1) { $controlrow["selectonline1"] = 'selected="selected" '; } else { $controlrow["selectonline1"] = ""; }
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Les réglages principaux:</b></span><br><br>
+<form enctype="multipart/form-data" action="" method="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+
+<tr valign="top"><td style="width:110px">Statut du jeu:</td><td><select name="gameopen"><option value="1" '.$controlrow['open1select'].'>Ouvert</option><option value="0" '.$controlrow['open0select'].'>Fermé</option></select><br>Fermez le jeu si vous êtes faites de la maintance dessus.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom du jeu:</td><td><input type="text" name="gamename" size="30" maxlength="50" value="'.$controlrow['gamename'].'"><br>Le nom du jeu par defaut est "RPG illusion". Mais vous pouvez librement le modifier.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">URL du jeu:</td><td><input type="text" name="gameurl" size="50" maxlength="100" value="'.$controlrow['gameurl'].'"><br>Veuillez indiquer l\'URL complète du jeu("http://www.votre_site.com/repertoire_du_jeu/").<br><br></td></tr>
+<tr valign="top"><td style="width:110px">E-mail admin:</td><td><input type="text" name="adminemail" size="30" maxlength="100" value="'.$controlrow['adminemail'].'"><br>Veuillez indiquer votre adresse e-mail.  Les utilisateurs qui auront besoin d\'aide utiliseront cette adresse pour vous écrire.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Taille carte:</td><td><input type="text" name="gamesize" size="3" maxlength="3" value="'.$controlrow['gamesize'].'"><br>250 par défault. C\'est la taille de la carte en longitude et en latitude. Notez aussi que les niveaux des monstres augmentent tous les 5 espaces, ainsi vous devriez vous assurer que la valeur actuelle de la carte est supérieur à 5. Dans le cas contraire le nombre de monstres seront très limités. Avec une taille de carte de 250, vous aurez 50 niveaux de monstre.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Compréssion:</td><td><select name="compression"><option value="0" '.$controlrow['selectcomp0'].'>Aucune</option><option value="1" '.$controlrow['selectcomp1'].'>Activé</option></select><br>Si vous compressez les pages du jeu, ceci réduira considérablement la bande passante utilisée par le jeu.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Email de vérification:</td><td><select name="verifyemail"><option value="0" '.$controlrow['selectverify0'].'>Aucun</option><option value="1" '.$controlrow['selectverify1'].'>Activé</option></select><br>Incitez les utilisateurs à vérifier leur adresse e-mail pour plus de sécuritée.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Babble box activé:</td><td><select name="showbabble"><option value="1" '.$controlrow["selectbabble1"].'>Oui</option><option value="0" '.$controlrow["selectbabble0"].'>Non</option></select><br>Cette option permet d\'afficher ou non la babble box dans toutes les villes.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Online activé:</td><td><select name="showonline"><option value="1" '.$controlrow["selectonline1"].'>Oui</option><option value="0" '.$controlrow["selectonline0"].'>Non</option></select><br>Cette option permet d\'afficher ou non les connectés dans toutes les villes.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom classe 1:</td><td><input type="text" name="class1name" size="20" maxlength="50" value="'.$controlrow['class1name'].'"><br><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom classe 2:</td><td><input type="text" name="class2name" size="20" maxlength="50" value="'.$controlrow['class2name'].'"><br><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom classe 3:</td><td><input type="text" name="class3name" size="20" maxlength="50" value="'.$controlrow['class3name'].'"><br><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom difficulté 1:</td><td><input type="text" name="diff1name" size="20" maxlength="50" value="'.$controlrow['diff1name'].'"><br><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom difficulté 2:</td><td><input type="text" name="diff2name" size="20" maxlength="50" value="'.$controlrow['diff2name'].'"><br><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Valeur difficulté 2:</td><td><input type="text" name="diff2mod" size="3" maxlength="3" value="'.$controlrow['diff2mod'].'"><br>1.2 par défault. Indiquez une valeur pour la difficultée moyenne ici.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom difficulté 3:</td><td><input type="text" name="diff3name" size="20" maxlength="50" value="'.$controlrow['diff3name'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Valeur difficulté 3:</td><td><input type="text" name="diff3mod" size="3" maxlength="3" value="'.$controlrow['diff2mod'].'"><br>1.2 par défault. Indiquez une valeur pour la difficultée optimale ici.<br><br></td></tr>
+
+<tr valign="top"><td style="width:1px"></td><td>
+
+<div style="text-align: center"><input type="submit" name="submit" value="Valider"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"></div></td></tr>
 </table>
-<input type="submit" name="submit" value="Valider" /> <input type="reset" name="reset" value="Annuler" />
-</form>
-END;
 
-    if ($controlrow["forumtype"] == 0) { $controlrow["selecttype0"] = "selected=\"selected\" "; } else { $controlrow["selecttype0"] = ""; }
-    if ($controlrow["forumtype"] == 1) { $controlrow["selecttype1"] = "selected=\"selected\" "; } else { $controlrow["selecttype1"] = ""; }
-    if ($controlrow["forumtype"] == 2) { $controlrow["selecttype2"] = "selected=\"selected\" "; } else { $controlrow["selecttype2"] = ""; }
-    if ($controlrow["compression"] == 0) { $controlrow["selectcomp0"] = "selected=\"selected\" "; } else { $controlrow["selectcomp0"] = ""; }
-    if ($controlrow["compression"] == 1) { $controlrow["selectcomp1"] = "selected=\"selected\" "; } else { $controlrow["selectcomp1"] = ""; }
-    if ($controlrow["verifyemail"] == 0) { $controlrow["selectverify0"] = "selected=\"selected\" "; } else { $controlrow["selectverify0"] = ""; }
-    if ($controlrow["verifyemail"] == 1) { $controlrow["selectverify1"] = "selected=\"selected\" "; } else { $controlrow["selectverify1"] = ""; }
-    if ($controlrow["shownews"] == 0) { $controlrow["selectnews0"] = "selected=\"selected\" "; } else { $controlrow["selectnews0"] = ""; }
-    if ($controlrow["shownews"] == 1) { $controlrow["selectnews1"] = "selected=\"selected\" "; } else { $controlrow["selectnews1"] = ""; }
-    if ($controlrow["showonline"] == 0) { $controlrow["selectonline0"] = "selected=\"selected\" "; } else { $controlrow["selectonline0"] = ""; }
-    if ($controlrow["showonline"] == 1) { $controlrow["selectonline1"] = "selected=\"selected\" "; } else { $controlrow["selectonline1"] = ""; }
-    if ($controlrow["showbabble"] == 0) { $controlrow["selectbabble0"] = "selected=\"selected\" "; } else { $controlrow["selectbabble0"] = ""; }
-    if ($controlrow["showbabble"] == 1) { $controlrow["selectbabble1"] = "selected=\"selected\" "; } else { $controlrow["selectbabble1"] = ""; }
-    if ($controlrow["gameopen"] == 1) { $controlrow["open1select"] = "selected=\"selected\" "; } else { $controlrow["open1select"] = ""; }
-    if ($controlrow["gameopen"] == 0) { $controlrow["open0select"] = "selected=\"selected\" "; } else { $controlrow["open0select"] = ""; }
+</form><br><br>';
+  }
 
-    $page = parsetemplate($page, $controlrow);
-    admindisplay($page, "Réglages principaux");
+  display(parsetemplate($page, $controlrow), 'Réglages principaux', true);
 
 }
 
 
-function items() {
+function items() {// Visualisation des objets.
+
+global $page;
     
-    $query = doquery("SELECT id,name FROM {{table}} ORDER BY id", "items");
-    $page = "<b><u>Editer les objets</u></b><br />Cliquez sur le nom d'un objet pour le modifier.<br /><br /><table width=\"50%\">\n";
-    $count = 1;
-    while ($row = mysql_fetch_array($query)) {
-        if ($count == 1) { $page .= "<tr><td width=\"8%\" style=\"background-color: #eeeeee;\">".$row["id"]."</td><td style=\"background-color: #eeeeee;\"><a href=\"admin.php?do=edititem:".$row["id"]."\">".$row["name"]."</a></td></tr>\n"; $count = 2; }
-        else { $page .= "<tr><td width=\"8%\" style=\"background-color: #ffffff;\">".$row["id"]."</td><td style=\"background-color: #ffffff;\"><a href=\"admin.php?do=edititem:".$row["id"]."\">".$row["name"]."</a></td></tr>\n"; $count = 1; }
-    }
-    if (mysql_num_rows($query) == 0) { $page .= "<tr><td width=\"8%\" style=\"background-color: #eeeeee;\">Pas d'objets trouvés.</td></tr>\n"; }
-    $page .= "</table>";
-    admindisplay($page, "Editer objets");
+    $itemsquery = doquery("SELECT * FROM {{table}} ORDER BY name", "items");
+    $page .='<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les objets:</b></span><br><br>Pour éditer un objet, cliquez sur celui de votre choix, dans la liste ci-dessous.<br><br>(<span class="alerte">*</span>) signifie que l\'objet possède un attribut spécial.<br><br>';
+    while ($itemsrow = mysql_fetch_array($itemsquery)) {
+        if ($itemsrow['special'] != "Aucun") { $special = '*'; } else { $special = ''; } 
+		if ($itemsrow['type'] == 1) { $categorie = "Pouvoir d'attaque:"; } else  { $categorie = "Pouvoir de défense:"; } 
+        if ($itemsrow['type'] == 1) { $type = 'Arme'; $pouvoir ='d\'attaque';} 
+        if ($itemsrow['type'] == 2) { $type = 'Armure'; $pouvoir ='de défense'; } 
+        if ($itemsrow['type'] == 3) { $type = 'Bouclier'; $pouvoir ='de défense'; } 
+   
+   $page .='<div class="bloc_rose"><div style="float:left"><img src="images/objets/'.$itemsrow['id'].'.jpg" alt="'.$itemsrow['name'].'"></div><a href="?do=edititem:'.$itemsrow['id'].'"><b><span class="mauve2">'.$itemsrow['name'].'<span class="alerte">'.$special.'</span></span></b></a> - <i>type: <span class="mauve1">'.$type.'</span> - Pouvoir '.$pouvoir.': <span class="mauve1">'.$itemsrow['attribute'].'</span></i> <span class="alerte">('.$itemsrow['buycost'].' rubis)</span><br><span class="taille1">'.$itemsrow['description'].'</span></div><br>';
+   }
+   
+   if (mysql_num_rows($itemsquery) == 0) { $page .= '<span class="alerte"> Il y a aucun objets trouvé!</span><br><br>'; }
+   $page .='<br><a href="index.php">» retourner au jeu</a><br><br>';
+   
+  display($page, "Editer les objets");
     
 }
 
-function edititem($id) {
-    
-    if (isset($_POST["submit"])) {
-        
-        extract($_POST);
-        $errors = 0;
-        $errorlist = "";
-        if ($name == "") { $errors++; $errorlist .= "Le nom est exigé.<br />"; }
-        if ($buycost == "") { $errors++; $errorlist .= "Le prix est exigé.<br />"; }
-        if (!is_numeric($buycost)) { $errors++; $errorlist .= "Le prix doit être un nombre!.<br />"; }
-        if ($attribute == "") { $errors++; $errorlist .= "L'attribut est exigé.<br />"; }
-        if (!is_numeric($attribute)) { $errors++; $errorlist .= "L'attribut doit être un nombre.<br />"; }
-        if ($special == "" || $special == " ") { $special = "X"; }
-        
-		
-        $name = addslashes($name); 
-		$description = addslashes($description);
 
-        if ($errors == 0) { 
-            $query = doquery("UPDATE {{table}} SET name='$name',type='$type',buycost='$buycost',description='$description',attribute='$attribute',special='$special' WHERE id='$id' LIMIT 1", "items");
-            admindisplay("Objet mis à jour.","Editer objets");
-        } else {
-            admindisplay("<b>Erreur:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Edit Items");
-        }        
-        
-    }   
-        
-    
-    $query = doquery("SELECT * FROM {{table}} WHERE id='$id' LIMIT 1", "items");
-    $row = mysql_fetch_array($query);
+function edititem($id) {// Edition des objets.
 
-$page = <<<END
-<b><u>Editer Items</u></b><br /><br />
-<form action="admin.php?do=edititem:$id" method="post">
-<table width="90%">
-<tr><td width="20%">ID:</td><td>{{id}}</td></tr>
-<br /><br />
-<tr><td width="20%">Nom:</td><td><input type="text" name="name" size="30" maxlength="30" value="{{name}}" /></td></tr>
-<tr><td width="20%">Image:</td><td><img src="./images/items/{{image}}.gif"/></td></tr>
-<tr><td width="20%">Type:</td><td><select name="type"><option value="1" {{type1select}}>Arme</option><option value="2" {{type2select}}>Armure</option><option value="3" {{type3select}}>Protection</option></select></td></tr>
-<tr><td width="20%">Prix:</td><td><input type="text" name="buycost" size="5" maxlength="10" value="{{buycost}}" /> rubis</td></tr>
-<tr><td width="20%">Description:</td><td><textarea name="description" type="text" rows="5" cols="50">{{description}}</textarea></td></tr>
-<tr><td width="20%">Attribut:</td><td><input type="text" name="attribute" size="5" maxlength="10" value="{{attribute}}" /><br /><span class="small">Le nombre de points que l'objet ajoute au pouvoir d'attaque (armes) ou au pouvoir de défense (armures/protections).</span></td></tr>
-<tr><td width="20%">Special:</td><td><input type="text" name="special" size="30" maxlength="50" value="{{special}}" /><br /><span class="small">Laissez <span class="highlight">X</span> pour donner aucun codes spéciaux à l'objet.</span></td></tr>
+global $page;
+
+$itemsquery = doquery("SELECT * FROM {{table}} WHERE id='$id' LIMIT 1", "items");
+$itemsrow = mysql_fetch_array($itemsquery);
+    
+     if (isset($_POST['submit'])) {
+      extract($_POST);
+      $errors = 0;
+      $errorlist = "";
+     if (trim($name) == "") { $errors++; $errorlist .= "- Le nom de l'objet est exigé.<br>"; }
+      if (preg_match("/[\^*+<>?#]/", $name)==1) { $errors++; $errorlist .= "- Le nom de l'objet doit être écrit en caractères alphanumériques.<br>"; }
+      if (trim($buycost) == "") { $errors++; $errorlist .= "- Le prix est exigé.<br>"; }
+      if (!is_numeric($buycost)) { $errors++; $errorlist .= "- Le prix doit être un nombre!<br>"; }
+      if (trim($attribute) == "") { $errors++; $errorlist .= "- L'attribut est exigé.<br>"; }
+      if (!is_numeric($attribute)) { $errors++; $errorlist .= "- L'attribut doit être un nombre.<br>"; }
+      if (trim($special) == "") { $special = "Aucun"; }
+	  if (trim($description) == "") { $description = "Aucune description"; }
+      if ($errors == 0) { 
+           
+      $update = doquery("UPDATE {{table}} SET name='".addslashes($name)."',type='$type',buycost='$buycost',description='".addslashes($description)."',attribute='$attribute',special='$special' WHERE id=$id LIMIT 1", "items");
+      $page .='L\'objet '.$itemsrow['name'].' a été mis à jour!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
+      } else {
+      $page .= 'La mise à jour n\'a pas pu se faire, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=edititem:'.$id.'">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
+      }   	
+    }else{  
+	
+	if ($itemsrow["type"] == 1) { $itemsrow["type1select"] = "selected=\"selected\" "; } else { $itemsrow["type1select"] = ""; }
+    if ($itemsrow["type"] == 2) { $itemsrow["type2select"] = "selected=\"selected\" "; } else { $itemsrow["type2select"] = ""; }
+    if ($itemsrow["type"] == 3) { $itemsrow["type3select"] = "selected=\"selected\" "; } else { $itemsrow["type3select"] = ""; }
+
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les objets:</b></span><br><br>
+
+<form enctype="multipart/form-data" action="" method="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">ID:</td><td>'.$itemsrow['id'].'<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom:</td><td><input type="text" name="name" size="30" maxlength="30" value="'.$itemsrow['name'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Image:</td><td><img src="images/objets/'.$itemsrow['id'].'.jpg" alt="'.$itemsrow['name'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Type:</td><td><select name="type"><option value="1" '.$itemsrow['type1select'].'>Arme</option><option value="2" '.$itemsrow['type2select'].'>Armure</option><option value="3" '.$itemsrow['type3select'].'>Protection</option></select><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Prix:</td><td><input type="text" name="buycost" size="5" maxlength="10" value="'.$itemsrow['buycost'].'"> rubis<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Description:</td><td><textarea name="description" rows="5" cols="50">'.$itemsrow['description'].'</textarea><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Attribut:</td><td><input type="text" name="attribute" size="5" maxlength="10" value="'.$itemsrow['attribute'].'"><br>Le nombre de points que l\'objet ajoute au pouvoir d\'attaque (armes) ou au pouvoir de défense (armures/protections).<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Special:</td><td><input type="text" name="special" size="30" maxlength="50" value="'.$itemsrow['special'].'"><br>Laissez "Aucun" pour donner aucun attribut spécial à l\'objet.<br><br></td></tr>
+<tr valign="top"><td style="width:1px"></td><td>
+
+<div style="text-align: center"><input type="submit" name="submit" value="Valider"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"></div></td></tr>
 </table>
-<input type="submit" name="submit" value="Valider" /> <input type="reset" name="reset" value="Annuler" />
-</form>
-<b>Codes spéciaux:</b><br />
-Des codes spéciaux peuvent être ajoutés à tous les objets, ce qui a pour but de leurs donner plus ou moins de valeur. Par exemple si vous voulez qu'un objet donne 50 HP à un personnage, il suffit d'écrire <span class="highlight">maxhp,50</span>. Ceci marche aussi dans le sens négatif. Donc si vous voulez qu'un objet enlève 50 HP à un personnage, il suffit d'écrire <span class="highlight">maxhp,-50</span>.<br /><br />
-Voici les codes spéciaux:<br />
-maxhp - Donner des points hit (HP)<br />
-maxmp - Donner des points de magie (MP)<br />
-maxtp - Donner un max de points de voyages<br />
-goldbonus - Donner un bonnus de rubis (en pourcentage)<br />
-expbonus - Donner un bonnus d'expérience (en pourcentage)<br />
-strength - Donner de la force (qui s'ajoute également au pouvoir d'attaque)<br />
-dexterity - Donner de la dextérité (qui s'ajoute également au pouvoir de défense)<br />
-attackpower - Donner un pouvoir d'attaque<br />
-defensepower - Donner un pouvoir de défense
-END;
-    
-    if ($row["type"] == 1) { $row["type1select"] = "selected=\"selected\" "; } else { $row["type1select"] = ""; }
-    if ($row["type"] == 2) { $row["type2select"] = "selected=\"selected\" "; } else { $row["type2select"] = ""; }
-    if ($row["type"] == 3) { $row["type3select"] = "selected=\"selected\" "; } else { $row["type3select"] = ""; }
-    
-    $page = parsetemplate($page, $row);
-    admindisplay($page, "Editer objets");
-    
-}
 
+</form><br>
+<span class="mauve1"><b>Attributs spéciaux des objets:</b></span><br>
+Des attributs spéciaux peuvent être ajoutés à tous les objets, ce qui a pour but d\'augmenter les capacités des personnages. Par exemple si vous voulez qu\'un objet donne 50 HP à un personnage, il suffit d\'écrire maxhp,50. Ceci marche aussi dans le sens négatif. Donc si vous voulez qu\'un objet enlève 50 HP à un personnage, il suffit d\'écrire maxhp,-50.<br><br>
 
-
-function drops() {
-    
-    $query = doquery("SELECT id,name FROM {{table}} ORDER BY id", "drops");
-    $page = "<b><u>Editer les objets perdus</u></b><br />Cliquez ici pour éditer un objet perdu.<br /><br /><table width=\"50%\">\n";
-    $count = 1;
-    while ($row = mysql_fetch_array($query)) {
-        if ($count == 1) { $page .= "<tr><td width=\"8%\" style=\"background-color: #eeeeee;\">".$row["id"]."</td><td style=\"background-color: #eeeeee;\"><a href=\"admin.php?do=editdrop:".$row["id"]."\">".$row["name"]."</a></td></tr>\n"; $count = 2; }
-        else { $page .= "<tr><td width=\"8%\" style=\"background-color: #ffffff;\">".$row["id"]."</td><td style=\"background-color: #ffffff;\"><a href=\"admin.php?do=editdrop:".$row["id"]."\">".$row["name"]."</a></td></tr>\n"; $count = 1; }
-    }
-    if (mysql_num_rows($query) == 0) { $page .= "<tr><td width=\"8%\" style=\"background-color: #eeeeee;\">Pas d'objets trouvés.</td></tr>\n"; }
-    $page .= "</table>";
-    admindisplay($page, "Editer objets perdus");
-    
-}
-
-function editdrop($id) {
-    
-    if (isset($_POST["submit"])) {
-        
-        extract($_POST);
-        $errors = 0;
-        $errorlist = "";
-        if ($name == "") { $errors++; $errorlist .= "Le nom est exigé.<br />"; }
-        if ($mlevel == "") { $errors++; $errorlist .= "Le niveau du monstre est exigé.<br />"; }
-        if (!is_numeric($mlevel)) { $errors++; $errorlist .= "Le niveau du monstre doit être en chiffre.<br />"; }
-        if ($attribute1 == "" || $attribute1 == " " || $attribute1 == "X") { $errors++; $errorlist .= "Le premier attribut est exigé.<br />"; }
-        if ($attribute2 == "" || $attribute2 == " ") { $attribute2 = "X"; }
-        
-		$name = addslashes($name); 
-		
-        if ($errors == 0) { 
-            $query = doquery("UPDATE {{table}} SET name='$name',mlevel='$mlevel',attribute1='$attribute1',attribute2='$attribute2' WHERE id='$id' LIMIT 1", "drops");
-            admindisplay("Objet midifié.","Editer objets perdus");
-        } else {
-            admindisplay("<b>Erreurs:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Editer les objets perdus");
-        }        
-        
-    }   
-        
-    
-    $query = doquery("SELECT * FROM {{table}} WHERE id='$id' LIMIT 1", "drops");
-    $row = mysql_fetch_array($query);
-
-$page = <<<END
-<b><u>Editer les objets perdus</u></b><br /><br />
-<form action="admin.php?do=editdrop:$id" method="post">
-<table width="90%">
-<tr><td width="20%">ID:</td><td>{{id}}</td></tr>
-<tr><td width="20%">Nom:</td><td><input type="text" name="name" size="30" maxlength="30" value="{{name}}" /></td></tr>
-<tr><td width="20%">Niveau du monstre:</td><td><input type="text" name="mlevel" size="5" maxlength="10" value="{{mlevel}}" /><br /><span class="small">Niveau de probabilité pour qu'un monstre laisse tomber cet objet.</span></td></tr>
-<tr><td width="20%">Attribut 1:</td><td><input type="text" name="attribute1" size="30" maxlength="50" value="{{attribute1}}" /><br /><span class="small">Doit être un code spécial.  Le premier attribut ne peut pas être vide.Éditez ce champ très soigneusement, parce que les erreurs d'orthographe peuvent créer des problèmes dans le jeu.</span></td></tr>
-<tr><td width="20%">Attribut 2:</td><td><input type="text" name="attribute2" size="30" maxlength="50" value="{{attribute2}}" /><br /><span class="small">Laissez  <span class="highlight">X</span> pour ne mettre aucun code spécial. Sinon éditez ce champ très soigneusement, parce que les erreurs d'orthographe peuvent créer des problèmes dans le jeu.</span></td></tr>
-</table>
-<input type="submit" name="submit" value="Valider" /> <input type="reset" name="reset" value="Annuler" />
-</form>
-<b>Codes spéciaux:</b><br />
-Des codes spéciaux peuvent être ajoutés à tous les objets, ce qui a pour but de leurs donner plus ou moins de valeur. Par exemple si vous voulez qu'un objet donne 50 HP à un personnage, il suffit d'écrire <span class="highlight">maxhp,50</span>. Ceci marche aussi dans le sens négatif. Donc si vous voulez qu'un objet enlève 50 HP à un personnage, il suffit d'écrire <span class="highlight">maxhp,50</span>.<br /><br />
-Voici les codes spéciaux:<br />
-maxhp - Donner des points hit (HP)<br />
-maxmp - Donner des points de magie (MP)<br />
-maxtp - Donner un max de points de voyages<br />
-goldbonus - Donner un bonnus de rubis (en pourcentage)<br />
-expbonus - Donner un bonnus d'expérience (en pourcentage)<br />
-strength - Donner de la force (qui s'ajoute également au pouvoir d'attaque)<br />
-dexterity - Donner de la dextérité (qui s'ajoute également au pouvoir de défense)<br />
-attackpower - Donner un pouvoir d'attaque<br />
-defensepower - Donner un pouvoir de défense
-END;
-    $page = parsetemplate($page, $row);
-    admindisplay($page, "Editer objets perdus");
-    
-}
-
-function towns() {
-    
-    $query = doquery("SELECT id,name FROM {{table}} ORDER BY id", "towns");
-    $page = "<b><u>Editer les villes</u></b><br />Cliquez sur un nom de ville pour l'éditer.<br /><br /><table width=\"50%\">\n";
-    $count = 1;
-    while ($row = mysql_fetch_array($query)) {
-        if ($count == 1) { $page .= "<tr><td width=\"8%\" style=\"background-color: #eeeeee;\">".$row["id"]."</td><td style=\"background-color: #eeeeee;\"><a href=\"admin.php?do=edittown:".$row["id"]."\">".$row["name"]."</a></td></tr>\n"; $count = 2; }
-        else { $page .= "<tr><td width=\"8%\" style=\"background-color: #ffffff;\">".$row["id"]."</td><td style=\"background-color: #ffffff;\"><a href=\"admin.php?do=edittown:".$row["id"]."\">".$row["name"]."</a></td></tr>\n"; $count = 1; }
-    }
-    if (mysql_num_rows($query) == 0) { $page .= "<tr><td width=\"8%\" style=\"background-color: #eeeeee;\">Pas de villes trouvées.</td></tr>\n"; }
-    $page .= "</table>";
-    admindisplay($page, "Editer villes");
-    
-}
-
-function edittown($id) {
-    
-    if (isset($_POST["submit"])) {
-        
-        extract($_POST);
-        $errors = 0;
-        $errorlist = "";
-        if ($name == "") { $errors++; $errorlist .= "Le nom est exigé.<br />"; }
-		if ($homeprice == "") { $errors++; $errorlist .= "Le prix des maisons est exigé.<br />"; }
-        if ($latitude == "") { $errors++; $errorlist .= "La latitude est exigée.<br />"; }
-        if (!is_numeric($latitude)) { $errors++; $errorlist .= "La latitude doit être un nombre.<br />"; }
-        if ($longitude == "") { $errors++; $errorlist .= "La longitude est exigée.<br />"; }
-        if (!is_numeric($longitude)) { $errors++; $errorlist .= "La longitude doit être un nombre.<br />"; }
-        if ($innprice == "") { $errors++; $errorlist .= "Le prix de l'auberge est exigé.<br />"; }
-        if (!is_numeric($innprice)) { $errors++; $errorlist .= "Le prix de l'auberge doir être un nombre.<br />"; }
-        if ($mapprice == "") { $errors++; $errorlist .= "Le prix de la carte est exigé.<br />"; }
-        if (!is_numeric($mapprice)) { $errors++; $errorlist .= "Le prix de la carte doit être un nombre.<br />"; }
-
-        if ($travelpoints == "") { $errors++; $errorlist .= "Les points de voyages sont exigés.<br />"; }
-        if (!is_numeric($travelpoints)) { $errors++; $errorlist .= "Les points de voyages doivent êtres des nombres.<br />"; }
-        if ($itemslist == "") { $errors++; $errorlist .= "La liste des objets est exigée.<br />"; }
-        
-		$name = addslashes($name); 
-        $allopass = addslashes($allopass);  
-		$alloprice = addslashes($alloprice);  
-        if ($errors == 0) { 
-            $query = doquery("UPDATE {{table}} SET name='$name',homeprice='$homeprice',chiffreniveau='$chiffreniveau' , chiffrebanque='$chiffrebanque'  ,codebanque='$codebanque', codeniveau='$codeniveau', latitude='$latitude',longitude='$longitude',innprice='$innprice',mapprice='$mapprice',travelpoints='$travelpoints',itemslist='$itemslist' WHERE id='$id' LIMIT 1", "towns");
-            admindisplay("Ville mise à jour.","Editer villes");
-        } else {
-            admindisplay("<b>Errors:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Editer les villes");
-        }        
-        
-    }   
-        
-    
-    $query = doquery("SELECT * FROM {{table}} WHERE id='$id' LIMIT 1", "towns");
-    $row = mysql_fetch_array($query);
-
-$page = <<<END
-<b><u>Editer villes</u></b><br /><br />
-<form action="admin.php?do=edittown:$id" method="post">
-<table width="90%">
-<tr><td width="20%">ID:</td><td>{{id}}</td></tr>
-<tr><td width="20%">Nom:</td><td><input type="text" name="name" size="30" maxlength="30" value="{{name}}" /></td></tr>
-<tr><td width="20%">Latitude:</td><td><input type="text" name="latitude" size="5" maxlength="10" value="{{latitude}}" /><br /><span class="small">Positive or negative integer.</span></td></tr>
-<tr><td width="20%">Longitude:</td><td><input type="text" name="longitude" size="5" maxlength="10" value="{{longitude}}" /><br /><span class="small">Positive or negative integer.</span></td></tr>
-<tr><td width="20%">Prix de l'auberge:</td><td><input type="text" name="innprice" size="5" maxlength="10" value="{{innprice}}" /> gold</td></tr>
-<tr><td width="20%">Prix des maisons:</td><td><input type="text" name="homeprice" size="5" maxlength="10" value="{{homeprice}}" /> gold</td></tr>
-<tr><td width="20%">Montant allopass:</td><td><input type="text" name="chiffrebanque" size="5" maxlength="10" value="{{chiffrebanque}}" /> gold</td></tr>
-<tr><td width="20%">Niv allopass:</td><td><input type="text" name="chiffreniveau" size="5" maxlength="10" value="{{chiffreniveau}}" /> gold</td></tr>
-<tr><td width="20%">Code allopass banque:</td><td><textarea name="codebanque" rows="7" cols="30">{{codebanque}}</textarea><br><b>URL de la page d'accès:</b> " http://www.votresite.com/demonstration/index.php "<br><b>URL du document:</b> "http://www.votresite.com/index.php?do=cheatbanque "<br></td></tr>
-<tr><td width="20%">Code allopass niv:</td><td><textarea name="codeniveau" rows="7" cols="30">{{codeniveau}}</textarea><br><b>URL de la page d'accès:</b> " http://www.votresite.com/demonstration/index.php "<br><b>URL du document:</b> "http://www.votresite.com/index.php?do=cheatniveau "<br></td></tr>
-<tr><td width="20%">Prix de la carte:</td><td><input type="text" name="mapprice" size="5" maxlength="10" value="{{mapprice}}" /> gold<br /><span class="small">Prix de la carte de cette ville.</span></td></tr>
-<tr><td width="20%">Points de voyage:</td><td><input type="text" name="travelpoints" size="5" maxlength="10" value="{{travelpoints}}" /><br /><span class="small">Nombre de Points de voyage (TP) consommés pour aller à cette ville.</span></td></tr>
-<tr><td width="20%">Liste des objets:</td><td><input type="text" name="itemslist" size="30" maxlength="200" value="{{itemslist}}" /><br /><span class="small">Liste des objets disponible dans le magasin de cette ville. (Example: <span class="highlight">1,2,3,6,9,10,13,20</span>)</span> Note: L'objet numéro 1 correspond à l'ID numéro 1 (pour voir l'ID des objets rendez vous dans la rubrique <span class="highlight">Editer objets</span>).</td></tr>
-</table>
-<input type="submit" name="submit" value="Valider" /> <input type="reset" name="reset" value="Annuler" />
-</form>
-END;
-    
-    $page = parsetemplate($page, $row);
-    admindisplay($page, "Editer villes");
-    
-}
-
-
-function monsters() {
-    
-    global $controlrow;
-    
-    $statquery = doquery("SELECT * FROM {{table}} ORDER BY level DESC LIMIT 1", "monsters");
-    $statrow = mysql_fetch_array($statquery);
-    
-    $query = doquery("SELECT id,name FROM {{table}} ORDER BY id", "monsters");
-    $page = "<b><u>Editer les monstres</u></b><br />";
-    
-    if (($controlrow["gamesize"]/5) != $statrow["level"]) {
-        $page .= "<span class=\"highlight\">Note:</span> Le niveau élevé des monstre ne s'assortit pas avec le taille de la carte.  Le niveau le plus élevé de monstre devrait être ".($controlrow["gamesize"]/5).", le votre est ".$statrow["level"].". Veuillez modifier la valeur avant d'ouvrir le jeu au public.<br /><br />";
-    } else { $page .= "Le niveau du monstre correspont parfaitement avec la taille de la carte, aucunes modifications n'est exigé.<br /><br />"; }
-    
-    $page .= "Cliquez sur le nom d'un monstre pour l'éditer.<br /><br /><table width=\"50%\">\n";
-    $count = 1;
-    while ($row = mysql_fetch_array($query)) {
-        if ($count == 1) { $page .= "<tr><td width=\"8%\" style=\"background-color: #eeeeee;\">".$row["id"]."</td><td style=\"background-color: #eeeeee;\"><a href=\"admin.php?do=editmonster:".$row["id"]."\">".$row["name"]."</a></td></tr>\n"; $count = 2; }
-        else { $page .= "<tr><td width=\"8%\" style=\"background-color: #ffffff;\">".$row["id"]."</td><td style=\"background-color: #ffffff;\"><a href=\"admin.php?do=editmonster:".$row["id"]."\">".$row["name"]."</a></td></tr>\n"; $count = 1; }
-    }
-    if (mysql_num_rows($query) == 0) { $page .= "<tr><td width=\"8%\" style=\"background-color: #eeeeee;\">Pas villes trouvés.</td></tr>\n"; }
-    $page .= "</table>";
-    admindisplay($page, "Editer monstres");
-    
-}
-
-function editmonster($id) {
-    
-    if (isset($_POST["submit"])) {
-        
-        extract($_POST);
-        $errors = 0;
-        $errorlist = "";
-        if ($name == "") { $errors++; $errorlist .= "Le nom est exigé.<br />"; }
-        if ($maxhp == "") { $errors++; $errorlist .= "Le max de HP est exigé.<br />"; }
-        if (!is_numeric($maxhp)) { $errors++; $errorlist .= "Le max de HP doit être un nombre.<br />"; }
-        if ($maxdam == "") { $errors++; $errorlist .= "Le max de dommage est exigé.<br />"; }
-        if (!is_numeric($maxdam)) { $errors++; $errorlist .= "Le max de dommage doit être un nombre.<br />"; }
-        if ($armor == "") { $errors++; $errorlist .= "Le niveau de l'armure est exigé.<br />"; }
-        if (!is_numeric($armor)) { $errors++; $errorlist .= "Le niveau de l'armure doir être un nombre.<br />"; }
-        if ($level == "") { $errors++; $errorlist .= "Le niveau du monstre est exigé.<br />"; }
-        if (!is_numeric($level)) { $errors++; $errorlist .= "Le niveau du monstre doit être un nombre.<br />"; }
-        if ($maxexp == "") { $errors++; $errorlist .= "Le max d'expérience est exigé.<br />"; }
-        if (!is_numeric($maxexp)) { $errors++; $errorlist .= "Le max d'expérience doit être un nombre.<br />"; }
-        if ($maxgold == "") { $errors++; $errorlist .= "Le max de rubis est exigé.<br />"; }
-        if (!is_numeric($maxgold)) { $errors++; $errorlist .= "Le max de rubis doit être un nombre.<br />"; }
-        
-		$name = addslashes($name); 
-		
-        if ($errors == 0) { 
-            $query = doquery("UPDATE {{table}} SET name='$name',maxhp='$maxhp',maxdam='$maxdam',armor='$armor',level='$level',maxexp='$maxexp',maxgold='$maxgold',immune='$immune' WHERE id='$id' LIMIT 1", "monsters");
-            admindisplay("Monstre mis à jour.","Editer monstres");
-        } else {
-            admindisplay("<b>Erreurs:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Editer les monstres");
-        }        
-        
-    }   
-        
-    
-    $query = doquery("SELECT * FROM {{table}} WHERE id='$id' LIMIT 1", "monsters");
-    $row = mysql_fetch_array($query);
-
-$page = <<<END
-<b><u>Editer les monstres</u></b><br /><br />
-<form action="admin.php?do=editmonster:$id" method="post">
-<table width="90%">
-<tr><td width="20%">ID:</td><td>{{id}}</td></tr>
-<tr><td width="20%">Nom:</td><td><input type="text" name="name" size="30" maxlength="30" value="{{name}}" /></td></tr>
-<tr><td width="20%">Portait:</td><td><img src="./images/monstre/{{image}}.jpg"  width="71" height="59"></td></tr>
-<tr><td width="20%">Max de HP:</td><td><input type="text" name="maxhp" size="5" maxlength="10" value="{{maxhp}}" /></td></tr>
-<tr><td width="20%">Max de dommages:</td><td><input type="text" name="maxdam" size="5" maxlength="10" value="{{maxdam}}" /><br /><span class="small">Comparez au pouvoir d'attaque du joueur.</span></td></tr>
-<tr><td width="20%">Armures:</td><td><input type="text" name="armor" size="5" maxlength="10" value="{{armor}}" /><br /><span class="small">Comparez au pouvoir de défense du joueur.</span></td></tr>
-<tr><td width="20%">Niveau du monstre:</td><td><input type="text" name="level" size="5" maxlength="10" value="{{level}}" /><br /><span class="small">Determines spawn location and item drops.</span></td></tr>
-<tr><td width="20%">Max d'experience:</td><td><input type="text" name="maxexp" size="5" maxlength="10" value="{{maxexp}}" /><br /><span class="small">Le maximum d'expérience qui sera donné au joueur, après avoir battu le monstre.</span></td></tr>
-<tr><td width="20%">Max de rubis:</td><td><input type="text" name="maxgold" size="5" maxlength="10" value="{{maxgold}}" /><br /><span class="small">Le maximum de rubis qui sera donné au joueur, après avoir battu le monstre.</span></td></tr>
-<tr><td width="20%">Immunisé contre le sort:</td><td><select name="immune"><option value="0" {{immune0select}}>Aucune</option><option value="1" {{immune1select}}>Attaque</option><option value="2" {{immune2select}}>Attaque & Sommeil</option></select><br /><span class="small">Quelques monstres peuvent ne pas être blessés par certains sorts.</span></td></tr>
-</table>
-<input type="submit" name="submit" value="Valider" /> <input type="reset" name="reset" value="Annuler" />
-</form>
-END;
-    
-    if ($row["immune"] == 1) { $row["immune1select"] = "selected=\"selected\" "; } else { $row["immune1select"] = ""; }
-    if ($row["immune"] == 2) { $row["immune2select"] = "selected=\"selected\" "; } else { $row["immune2select"] = ""; }
-    if ($row["immune"] == 3) { $row["immune3select"] = "selected=\"selected\" "; } else { $row["immune3select"] = ""; }
-    
-    $page = parsetemplate($page, $row);
-    admindisplay($page, "Editer monstres");
-    
-}
-
-function spells() {
-    
-    $query = doquery("SELECT id,name FROM {{table}} ORDER BY id", "spells");
-    $page = "<b><u>Editer les sorts</u></b><br />Cliquez sur le nom d'un sort pour l'éditer.<br /><br /><table width=\"50%\">\n";
-    $count = 1;
-    while ($row = mysql_fetch_array($query)) {
-        if ($count == 1) { $page .= "<tr><td width=\"8%\" style=\"background-color: #eeeeee;\">".$row["id"]."</td><td style=\"background-color: #eeeeee;\"><a href=\"admin.php?do=editspell:".$row["id"]."\">".$row["name"]."</a></td></tr>\n"; $count = 2; }
-        else { $page .= "<tr><td width=\"8%\" style=\"background-color: #ffffff;\">".$row["id"]."</td><td style=\"background-color: #ffffff;\"><a href=\"admin.php?do=editspell:".$row["id"]."\">".$row["name"]."</a></td></tr>\n"; $count = 1; }
-    }
-    if (mysql_num_rows($query) == 0) { $page .= "<tr><td width=\"8%\" style=\"background-color: #eeeeee;\">Pas de sorts trouvés.</td></tr>\n"; }
-    $page .= "</table>";
-    admindisplay($page, "Editer sorts");
-    
-}
-
-function editspell($id) {
-    
-    if (isset($_POST["submit"])) {
-        
-        extract($_POST);
-        $errors = 0;
-        $errorlist = "";
-        if ($name == "") { $errors++; $errorlist .= "Le nom est exigé.<br />"; }
-        if ($mp == "") { $errors++; $errorlist .= "Les MP sont exigés.<br />"; }
-        if (!is_numeric($mp)) { $errors++; $errorlist .= "Les MP doivent êtres des nombres.<br />"; }
-        if ($attribute == "") { $errors++; $errorlist .= "L'attribut est exigé.<br />"; }
-        if (!is_numeric($attribute)) { $errors++; $errorlist .= "L'attribut doit être un nombre.<br />"; }
-        
-		$name = addslashes($name); 
-		
-        if ($errors == 0) { 
-            $query = doquery("UPDATE {{table}} SET name='$name',mp='$mp',attribute='$attribute',type='$type' WHERE id='$id' LIMIT 1", "spells");
-            admindisplay("Sort mis à jour.","Editer sorts");
-        } else {
-            admindisplay("<b>Erreurs:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Editer les sorts");
-        }        
-        
-    }   
-        
-    
-    $query = doquery("SELECT * FROM {{table}} WHERE id='$id' LIMIT 1", "spells");
-    $row = mysql_fetch_array($query);
-
-$page = <<<END
-<b><u>Editer les sorts</u></b><br /><br />
-<form action="admin.php?do=editspell:$id" method="post">
-<table width="90%">
-<tr><td width="20%">ID:</td><td>{{id}}</td></tr>
-<tr><td width="20%">Nom:</td><td><input type="text" name="name" size="30" maxlength="30" value="{{name}}" /></td></tr>
-<tr><td width="20%">Points de magie:</td><td><input type="text" name="mp" size="5" maxlength="10" value="{{mp}}" /><br /><span class="small">MP requis pour éxécuter ce sort.</span></td></tr>
-<tr><td width="20%">Attribut:</td><td><input type="text" name="attribute" size="5" maxlength="10" value="{{attribute}}" /><br /><span class="small">Valeur numérique du type de sorts que vous avez choisi ci-dessous.</span></td></tr>
-<tr><td width="20%">Type:</td><td><select name="type"><option value="1" {{type1select}}>Soin</option><option value="2" {{type2select}}>Attaque</option><option value="3" {{type3select}}>Sommeil</option><option value="4" {{type4select}}>Attaque d'Uber</option><option value="5" {{type5select}}>Défense d'Uber</option></select><br /><span class="small">- "Soin" redonne des HP au joueur.<br />- "Attaque" cause des dommages au monstre.<br />- "Sommeil" endort le monstre. Note: Si vous mettez l'attribut du sommeil sur 2, le monstre aura très peu de chance de s'endormir, par contre si vous le mettez sur 15, le monstre s'endormira certainement (l'attribut du sommeil varie de 1 à 15).<br>- L'attaque d'Uber augmente les dommages d'attaque totale par 50% par exemple si vous mettez dans les attributs 50.<br>- La défense d'Uber augmente la défense totale sur une attaque par 50% par exemple si vous mettez dans les attributs 50. 
-</table>
-<input type="submit" name="submit" value="Valider" /> <input type="reset" name="reset" value="Annuler" />
-</form>
-END;
-
-    if ($row["type"] == 1) { $row["type1select"] = "selected=\"selected\" "; } else { $row["type1select"] = ""; }
-    if ($row["type"] == 2) { $row["type2select"] = "selected=\"selected\" "; } else { $row["type2select"] = ""; }
-    if ($row["type"] == 3) { $row["type3select"] = "selected=\"selected\" "; } else { $row["type3select"] = ""; }
-    if ($row["type"] == 4) { $row["type4select"] = "selected=\"selected\" "; } else { $row["type4select"] = ""; }
-    if ($row["type"] == 5) { $row["type5select"] = "selected=\"selected\" "; } else { $row["type5select"] = ""; }
-    
-    $page = parsetemplate($page, $row);
-    admindisplay($page, "Editer sorts");
-    
-}
-
-function levels() {
-
-    $query = doquery("SELECT id FROM {{table}} ORDER BY id DESC LIMIT 1", "levels");
-    $row = mysql_fetch_array($query);
-    
-    $options = "";
-    for($i=2; $i<$row["id"]; $i++) {
-        $options .= "<option value=\"$i\">$i</option>\n";
-    }
-    
-$page = <<<END
-<b><u>Editer les niveaux du jeu</u></b><br />Modifier le niveau du jeu à partir du menu déroulant ci-dessous.<br /><br />
-<form action="admin.php?do=editlevel" method="post">
-<select name="level">
-$options
-</select> 
-<input type="submit" name="go" value="Valider" />
-</form>
-END;
-
-    admindisplay($page, "Editer niveaux");
-    
-}
-
-function editlevel() {
-
-    if (!isset($_POST["level"])) { admindisplay("Pas de niveaux à éditer.", "Editer les niveaux du jeu"); die(); }
-    $id = $_POST["level"];
-    
-    if (isset($_POST["submit"])) {
-        
-        extract($_POST);
-        $errors = 0;
-        $errorlist = "";
-        if ($_POST["1_exp"] == "") { $errors++; $errorlist .= "L'expérience de la classe 1 est exigée.<br />"; }
-        if ($_POST["1_hp"] == "") { $errors++; $errorlist .= "Le HP de la classe 1 est exigé.<br />"; }
-        if ($_POST["1_mp"] == "") { $errors++; $errorlist .= "Le MP de la classe 1 est exigé.<br />"; }
-        if ($_POST["1_tp"] == "") { $errors++; $errorlist .= "Le TP de la classe 1 est exigé.<br />"; }
-        if ($_POST["1_strength"] == "") { $errors++; $errorlist .= "La force de la classe 1 est exigée.<br />"; }
-        if ($_POST["1_dexterity"] == "") { $errors++; $errorlist .= "La dextérité de la classe 1 est exigée.<br />"; }
-        if ($_POST["1_spells"] == "") { $errors++; $errorlist .= "Le sort de la classe 1 est exigée.<br />"; }
-        if (!is_numeric($_POST["1_exp"])) { $errors++; $errorlist .= "L'expérience de la classe 1 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["1_hp"])) { $errors++; $errorlist .= "Le HP de la classe 1 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["1_mp"])) { $errors++; $errorlist .= "Le MP de la classe 1 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["1_tp"])) { $errors++; $errorlist .= "Le TP de la classe 1 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["1_strength"])) { $errors++; $errorlist .= "La force de la classe 1 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["1_dexterity"])) { $errors++; $errorlist .= "La dextérité de la classe 1 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["1_spells"])) { $errors++; $errorlist .= "Le sort de la classe 1 doit être un nombre.<br />"; }
-
-        if ($_POST["2_exp"] == "") { $errors++; $errorlist .= "L'expérience de la classe 2 est exigée.<br />"; }
-        if ($_POST["2_hp"] == "") { $errors++; $errorlist .= "Le HP de la classe 2 est exigé.<br />"; }
-        if ($_POST["2_mp"] == "") { $errors++; $errorlist .= "Le MP de la classe 2 est exigé.<br />"; }
-        if ($_POST["2_tp"] == "") { $errors++; $errorlist .= "Le TP de la classe 2 est exigé.<br />"; }
-        if ($_POST["2_strength"] == "") { $errors++; $errorlist .= "La force de la classe 2 est exigée.<br />"; }
-        if ($_POST["2_dexterity"] == "") { $errors++; $errorlist .= "La dextérité de la classe 2 est exigée.<br />"; }
-        if ($_POST["2_spells"] == "") { $errors++; $errorlist .= "Le sort de la classe 2 est exigé.<br />"; }
-        if (!is_numeric($_POST["2_exp"])) { $errors++; $errorlist .= "L'expérience de la classe 2 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["2_hp"])) { $errors++; $errorlist .= "Le HP de la classe 2 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["2_mp"])) { $errors++; $errorlist .= "Le MP de la classe 2 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["2_tp"])) { $errors++; $errorlist .= "Le TP de la classe 2 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["2_strength"])) { $errors++; $errorlist .= "La force de la classe 2 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["2_dexterity"])) { $errors++; $errorlist .= "La dextérité de la classe 2 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["2_spells"])) { $errors++; $errorlist .= "Le sort de la classe 2 doit être un nombre.<br />"; }
-                
-        if ($_POST["3_exp"] == "") { $errors++; $errorlist .= "L'expérience de la classe 3 est exigée.<br />"; }
-        if ($_POST["3_hp"] == "") { $errors++; $errorlist .= "Le HP de la classe 3 est exigé.<br />"; }
-        if ($_POST["3_mp"] == "") { $errors++; $errorlist .= "Le MP de la classe 3 est exigé.<br />"; }
-        if ($_POST["3_tp"] == "") { $errors++; $errorlist .= "Le TP de la classe 3 est exigé.<br />"; }
-        if ($_POST["3_strength"] == "") { $errors++; $errorlist .= "La force de la classe 3 est exigée.<br />"; }
-        if ($_POST["3_dexterity"] == "") { $errors++; $errorlist .= "La dextérité de la classe 3 est exigée.<br />"; }
-        if ($_POST["3_spells"] == "") { $errors++; $errorlist .= "Le sort de la classe 3 est exigé.<br />"; }
-        if (!is_numeric($_POST["3_exp"])) { $errors++; $errorlist .= "L'expérience de la classe 3 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["3_hp"])) { $errors++; $errorlist .= "Le HP de la classe 3 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["3_mp"])) { $errors++; $errorlist .= "Le MP de la classe 3 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["3_tp"])) { $errors++; $errorlist .= "Le TP de la classe 3 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["3_strength"])) { $errors++; $errorlist .= "La force de la classe 3 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["3_dexterity"])) { $errors++; $errorlist .= "La dextérité de la classe 3 doit être un nombre.<br />"; }
-        if (!is_numeric($_POST["3_spells"])) { $errors++; $errorlist .= "Le sort de la classe 3 doit être un nombre.<br />"; }
-
-        if ($errors == 0) { 
-$updatequery = <<<END
-UPDATE {{table}} SET
-1_exp='$1_exp', 1_hp='$1_hp', 1_mp='$1_mp', 1_tp='$1_tp', 1_strength='$1_strength', 1_dexterity='$1_dexterity', 1_spells='$1_spells',
-2_exp='$2_exp', 2_hp='$2_hp', 2_mp='$2_mp', 2_tp='$2_tp', 2_strength='$2_strength', 2_dexterity='$2_dexterity', 2_spells='$2_spells',
-3_exp='$3_exp', 3_hp='$3_hp', 3_mp='$3_mp', 3_tp='$3_tp', 3_strength='$3_strength', 3_dexterity='$3_dexterity', 3_spells='$3_spells'
-WHERE id='$id' LIMIT 1
-END;
-			$query = doquery($updatequery, "levels");
-            admindisplay("Niveau mis à jour.","Editer niveaux");
-        } else {
-            admindisplay("<b>Erreurs:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Editer les sorts");
-        }        
-        
-    }   
-        
-    
-    $query = doquery("SELECT * FROM {{table}} WHERE id='$id' LIMIT 1", "levels");
-    $row = mysql_fetch_array($query);
-    global $controlrow;
-    $class1name = $controlrow["class1name"];
-    $class2name = $controlrow["class2name"];
-    $class3name = $controlrow["class3name"];
-
-$page = <<<END
-<b><u>Editer les niveaux</u></b><br /><br />
-Nous vous déconseillons fortement de modifier les valeurs du 5ème paliers (niveau, expérience, force...), car le jeu a fait un calcul précis pour arriver à ces résulats. Si vous changez ces valeurs des erreurs peuvent se produirent.<br /><br />
-<form action="admin.php?do=editlevel" method="post">
-<input type="hidden" name="level" value="$id" />
-<table width="90%">
-<tr><td width="20%">ID:</td><td>{{id}}</td></tr>
-
-<tr><td colspan="2" style="background-color:#cccccc;">&nbsp;</td></tr>
-
-<tr><td width="20%">Experience du $class1name:</td><td><input type="text" name="1_exp" size="10" maxlength="8" value="{{1_exp}}" /></td></tr>
-<tr><td width="20%">HP du $class1name:</td><td><input type="text" name="1_hp" size="5" maxlength="5" value="{{1_hp}}" /></td></tr>
-<tr><td width="20%">MP du $class1name:</td><td><input type="text" name="1_mp" size="5" maxlength="5" value="{{1_mp}}" /></td></tr>
-<tr><td width="20%">TP du $class1name:</td><td><input type="text" name="1_tp" size="5" maxlength="5" value="{{1_tp}}" /></td></tr>
-<tr><td width="20%">Force du $class1name:</td><td><input type="text" name="1_strength" size="5" maxlength="5" value="{{1_strength}}" /></td></tr>
-<tr><td width="20%">Dextérité du $class1name:</td><td><input type="text" name="1_dexterity" size="5" maxlength="5" value="{{1_dexterity}}" /></td></tr>
-<tr><td width="20%">Sorts du $class1name:</td><td><input type="text" name="1_spells" size="5" maxlength="3" value="{{1_spells}}" /></td></tr>
-
-<tr><td colspan="2" style="background-color:#cccccc;">&nbsp;</td></tr>
-
-<tr><td width="20%">Expérience du $class2name:</td><td><input type="text" name="2_exp" size="10" maxlength="8" value="{{2_exp}}" /></td></tr>
-<tr><td width="20%">HP du $class2name:</td><td><input type="text" name="2_hp" size="5" maxlength="5" value="{{2_hp}}" /></td></tr>
-<tr><td width="20%">MP du $class2name:</td><td><input type="text" name="2_mp" size="5" maxlength="5" value="{{2_mp}}" /></td></tr>
-<tr><td width="20%">TP du $class2name:</td><td><input type="text" name="2_tp" size="5" maxlength="5" value="{{2_tp}}" /></td></tr>
-<tr><td width="20%">Force du $class2name:</td><td><input type="text" name="2_strength" size="5" maxlength="5" value="{{2_strength}}" /></td></tr>
-<tr><td width="20%">Dextérité du $class2name:</td><td><input type="text" name="2_dexterity" size="5" maxlength="5" value="{{2_dexterity}}" /></td></tr>
-<tr><td width="20%">Sorts du $class2name:</td><td><input type="text" name="2_spells" size="5" maxlength="3" value="{{2_spells}}" /></td></tr>
-
-<tr><td colspan="2" style="background-color:#cccccc;">&nbsp;</td></tr>
-
-<tr><td width="20%">Experience du $class3name:</td><td><input type="text" name="3_exp" size="10" maxlength="8" value="{{3_exp}}" /></td></tr>
-<tr><td width="20%">HP du $class3name:</td><td><input type="text" name="3_hp" size="5" maxlength="5" value="{{3_hp}}" /></td></tr>
-<tr><td width="20%">MP du $class3name:</td><td><input type="text" name="3_mp" size="5" maxlength="5" value="{{3_mp}}" /></td></tr>
-<tr><td width="20%">TP du $class3name:</td><td><input type="text" name="3_tp" size="5" maxlength="5" value="{{3_tp}}" /></td></tr>
-<tr><td width="20%">Force du $class3name:</td><td><input type="text" name="3_strength" size="5" maxlength="5" value="{{3_strength}}" /></td></tr>
-<tr><td width="20%">Dextérité du $class3name:</td><td><input type="text" name="3_dexterity" size="5" maxlength="5" value="{{3_dexterity}}" /></td></tr>
-<tr><td width="20%">Sorts du $class3name:</td><td><input type="text" name="3_spells" size="5" maxlength="3" value="{{3_spells}}" /></td></tr>
-</table>
-<input type="submit" name="submit" value="Valider" /> <input type="reset" name="reset" value="Annuler" />
-</form>
-END;
-    
-    $page = parsetemplate($page, $row);
-    admindisplay($page, "Editer niveaux");
-    
-}
-
-function users() {
-    
-    $query = doquery("SELECT id,username FROM {{table}} ORDER BY id", "users");
-    $page = "<b><u>Editer les utilisateurs</u></b><br />Cliquez sur le nom d'un utilisateur pour éditer son compte.<br /><br /><table width=\"50%\">\n";
-    $count = 1;
-    while ($row = mysql_fetch_array($query)) {
-        if ($count == 1) { $page .= "<tr><td width=\"8%\" style=\"background-color: #eeeeee;\">".$row["id"]."</td><td style=\"background-color: #eeeeee;\"><a href=\"admin.php?do=edituser:".$row["id"]."\">".$row["username"]."</a></td></tr>\n"; $count = 2; }
-        else { $page .= "<tr><td width=\"8%\" style=\"background-color: #ffffff;\">".$row["id"]."</td><td style=\"background-color: #ffffff;\"><a href=\"admin.php?do=edituser:".$row["id"]."\">".$row["username"]."</a></td></tr>\n"; $count = 1; }
-    }
-    if (mysql_num_rows($query) == 0) { $page .= "<tr><td width=\"8%\" style=\"background-color: #eeeeee;\">Pas de sorts trouvés.</td></tr>\n"; }
-    $page .= "</table>";
-    admindisplay($page, "Editer utilisateurs");
-
-}
-
-function edituser($id) {
-    
-    if (isset($_POST["submit"])) {
-        
-        extract($_POST);
-        $errors = 0;
-        $errorlist = "";
-
-        if ($email == "") { $errors++; $errorlist .= "L'Email est exigé.<br />"; }
-        if ($verify == "") { $errors++; $errorlist .= "La vérification de l'email est exigée.<br />"; }
-        if ($charname == "") { $errors++; $errorlist .= "Le nom du personnage est exigé.<br />"; }
-        if ($authlevel == "") { $errors++; $errorlist .= "Le niveau d'accès est exigé.<br />"; }
-        if ($latitude == "") { $errors++; $errorlist .= "La latitude est exigée.<br />"; }
-        if ($longitude == "") { $errors++; $errorlist .= "La longitude est exigée.<br />"; }
-        if ($difficulty == "") { $errors++; $errorlist .= "La difficulté est exigée.<br />"; }
-        if ($charclass == "") { $errors++; $errorlist .= "La classe du personnagee est exigée.<br />"; }
-        if ($currentaction == "") { $errors++; $errorlist .= "L'action actuel est exigée.<br />"; }
-        if ($currentfight == "") { $errors++; $errorlist .= "Le combat en cours est exigé.<br />"; }
-        
-        if ($currentmonster == "") { $errors++; $errorlist .= "L'ID du monstre actuel est exigé.<br />"; }
-        if ($currentmonsterhp == "") { $errors++; $errorlist .= "Le HP du monstre actuel est exigé.<br />"; }
-        if ($currentmonstersleep == "") { $errors++; $errorlist .= "L'ID des sorts du monstre actuel est exigés.<br />"; }
-        if ($currentmonsterimmune == "") { $errors++; $errorlist .= "L'immunité du monstre actuel est exigée.<br />"; }
-        if ($currentuberdamage == "") { $errors++; $errorlist .= "Le dommage actuel d'Uber est exigé.<br />"; }
-        if ($currentuberdefense == "") { $errors++; $errorlist .= "La défense actuel d'Uber est exigé.<br />"; }
-        if ($currenthp == "") { $errors++; $errorlist .= "Le HP actuel est exigé.<br />"; }
-        if ($currentmp == "") { $errors++; $errorlist .= "Le MP actuel est exigé.<br />"; }
-        if ($currenttp == "") { $errors++; $errorlist .= "Le TP actuel est exigé.<br />"; }
-        if ($maxhp == "") { $errors++; $errorlist .= "Le HP max est exigé.<br />"; }
-
-        if ($maxmp == "") { $errors++; $errorlist .= "Le MP max est exigé.<br />"; }
-        if ($maxtp == "") { $errors++; $errorlist .= "Le TP max est exigé.<br />"; }
-        if ($level == "") { $errors++; $errorlist .= "Le niveau est exigé.<br />"; }
-        if ($gold == "") { $errors++; $errorlist .= "Les rubis sont exigés.<br />"; }
-        if ($experience == "") { $errors++; $errorlist .= "L'experience est exigée.<br />"; }
-        if ($goldbonus == "") { $errors++; $errorlist .= "Les rubis bonnus sont exigés.<br />"; }
-        if ($expbonus == "") { $errors++; $errorlist .= "L'experience Bonus est exigé.<br />"; }
-        if ($strength == "") { $errors++; $errorlist .= "La force est exigée.<br />"; }
-        if ($dexterity == "") { $errors++; $errorlist .= "La dextérité est exigée.<br />"; }
-        if ($attackpower == "") { $errors++; $errorlist .= "Le pouvoir d'attaque est exigé.<br />"; }
-
-        if ($defensepower == "") { $errors++; $errorlist .= "Le pouvoir de défense est exigé.<br />"; }
-        if ($weaponid == "") { $errors++; $errorlist .= "L'ID de l'arme est exigé.<br />"; }
-        if ($armorid == "") { $errors++; $errorlist .= "L'ID de l'armure est exigé.<br />"; }
-        if ($shieldid == "") { $errors++; $errorlist .= "L'ID de la protection est exigé.<br />"; }
-        if ($slot1id == "") { $errors++; $errorlist .= "L'ID de la fente 1 est exigé.<br />"; }
-        if ($slot2id == "") { $errors++; $errorlist .= "L'ID de la fente 2 est exigé.<br />"; }
-        if ($slot3id == "") { $errors++; $errorlist .= "L'ID de la fente 3 est exigé.<br />"; }
-        if ($weaponname == "") { $errors++; $errorlist .= "Le nom de l'arme est exigé.<br />"; }
-        if ($armorname == "") { $errors++; $errorlist .= "Le nom de l'armure est exigé.<br />"; }
-        if ($shieldname == "") { $errors++; $errorlist .= "Le nom de la protection est exigé.<br />"; }
-
-        if ($slot1name == "") { $errors++; $errorlist .= "Le nom de la fente 1 est exigé.<br />"; }
-        if ($slot2name == "") { $errors++; $errorlist .= "Le nom de la fente 2 est exigé.<br />"; }
-        if ($slot3name == "") { $errors++; $errorlist .= "Le nom de la fente 2 est exigé.<br />"; }
-        if ($dropcode == "") { $errors++; $errorlist .= "Le code drop est exigé.<br />"; }
-        if ($spells == "") { $errors++; $errorlist .= "L'ID des sorts sont exigés.<br />"; }
-        if ($towns == "") { $errors++; $errorlist .= "Les villes sont exigées.<br />"; }
-        
-        if (!is_numeric($authlevel)) { $errors++; $errorlist .= "Le niveau d'accès doit être un nombre.<br />"; }
-        if (!is_numeric($latitude)) { $errors++; $errorlist .= "La latitude doit être un nombre.<br />"; }
-        if (!is_numeric($longitude)) { $errors++; $errorlist .= "La longitude doit être un nombre.<br />"; }
-        if (!is_numeric($difficulty)) { $errors++; $errorlist .= "La difficultée doit être un nombre.<br />"; }
-        if (!is_numeric($charclass)) { $errors++; $errorlist .= "La classe du personnage doit être un nombre.<br />"; }
-        if (!is_numeric($currentfight)) { $errors++; $errorlist .= "Le combat en cours doit être un nombre.<br />"; }
-        if (!is_numeric($currentmonster)) { $errors++; $errorlist .= "L'ID monstre actuel doit être un nombre.<br />"; }
-        if (!is_numeric($currentmonsterhp)) { $errors++; $errorlist .= "Le HP du monstre actuel doit être un nombre.<br />"; }
-        if (!is_numeric($currentmonstersleep)) { $errors++; $errorlist .= "L'ID des sorts du monstre actuel doit être un nombre.<br />"; }
-        
-        if (!is_numeric($currentmonsterimmune)) { $errors++; $errorlist .= "L'immunité du monstre actuel doit être nombre.<br />"; }
-        if (!is_numeric($currentuberdamage)) { $errors++; $errorlist .= "Le dommage actuel d'Uber doit être un nombre.<br />"; }
-        if (!is_numeric($currentuberdefense)) { $errors++; $errorlist .= "La défense actuel d'Uber doit être un nombre.<br />"; }
-        if (!is_numeric($currenthp)) { $errors++; $errorlist .= "Le HP actuel doit être un nombre.<br />"; }
-        if (!is_numeric($currentmp)) { $errors++; $errorlist .= "Le MP actuel doit être un nombre.<br />"; }
-        if (!is_numeric($currenttp)) { $errors++; $errorlist .= "Le TP actuel doit être un nombre.<br />"; }
-        if (!is_numeric($maxhp)) { $errors++; $errorlist .= "Le HP Max doit àtre un nombre.<br />"; }
-        if (!is_numeric($maxmp)) { $errors++; $errorlist .= "Le MP Max doit àtre un nombre.<br />"; }
-        if (!is_numeric($maxtp)) { $errors++; $errorlist .= "Le TP Max doit àtre un nombre.<br />"; }
-        if (!is_numeric($level)) { $errors++; $errorlist .= "Le niveau doit être un nombre.<br />"; }
-        
-        if (!is_numeric($gold)) { $errors++; $errorlist .= "Les rubis doivent êtres des nombres.<br />"; }
-        if (!is_numeric($experience)) { $errors++; $errorlist .= "L'expérience doit être un nombre.<br />"; }
-        if (!is_numeric($goldbonus)) { $errors++; $errorlist .= "Les rubis bonnus doivent êtres des nombres.<br />"; }
-        if (!is_numeric($expbonus)) { $errors++; $errorlist .= "L'expérience bonnus doit être un nombre.<br />"; }
-        if (!is_numeric($strength)) { $errors++; $errorlist .= "La force doit être un nombre.<br />"; }
-        if (!is_numeric($dexterity)) { $errors++; $errorlist .= "La dextérité doit être un nombre.<br />"; }
-        if (!is_numeric($attackpower)) { $errors++; $errorlist .= "Le pouvoir d'attaque doit être un nombre.<br />"; }
-        if (!is_numeric($defensepower)) { $errors++; $errorlist .= "Le pouvoir de défense doit être un nombre.<br />"; }
-        if (!is_numeric($weaponid)) { $errors++; $errorlist .= "L'ID de la l'arme doit être un nombre.<br />"; }
-        if (!is_numeric($armorid)) { $errors++; $errorlist .= "L'ID de l'armure doit être un nombre.<br />"; }
-        
-        if (!is_numeric($shieldid)) { $errors++; $errorlist .= "L'ID de la protection doit tre un nombre.<br />"; }
-        if (!is_numeric($slot1id)) { $errors++; $errorlist .= "L'ID de la fente 1 doit être un nombre.<br />"; }
-        if (!is_numeric($slot2id)) { $errors++; $errorlist .= "L'ID de la fente 2 doit être un nombre.<br />"; }
-        if (!is_numeric($slot3id)) { $errors++; $errorlist .= "L'ID de la fente 3 doit être un nombre.<br />"; }
-        if (!is_numeric($dropcode)) { $errors++; $errorlist .= "Le code drop doit être un nombre.<br />"; }
-        
-        if ($errors == 0) { 
-$updatequery = <<<END
-UPDATE {{table}} SET
-email="$email", verify="$verify", charname="$charname", authlevel="$authlevel", latitude="$latitude",
-longitude="$longitude", difficulty="$difficulty", charclass="$charclass", currentaction="$currentaction", currentfight="$currentfight",
-currentmonster="$currentmonster", currentmonsterhp="$currentmonsterhp", currentmonstersleep="$currentmonstersleep", currentmonsterimmune="$currentmonsterimmune", currentuberdamage="$currentuberdamage",
-currentuberdefense="$currentuberdefense", currenthp="$currenthp", currentmp="$currentmp", currenttp="$currenttp", maxhp="$maxhp",
-maxmp="$maxmp", maxtp="$maxtp", level="$level", gold="$gold", experience="$experience",
-goldbonus="$goldbonus", expbonus="$expbonus", strength="$strength", dexterity="$dexterity", attackpower="$attackpower",
-defensepower="$defensepower", weaponid="$weaponid", armorid="$armorid", shieldid="$shieldid", slot1id="$slot1id",
-slot2id="$slot2id", slot3id="$slot3id", weaponname="$weaponname", armorname="$armorname", shieldname="$shieldname",
-slot1name="$slot1name", slot2name="$slot2name", slot3name="$slot3name", dropcode="$dropcode", spells="$spells",
-towns="$towns" WHERE id="$id" LIMIT 1
-END;
-			$query = doquery($updatequery, "users");
-            admindisplay("Utilisateur mis à jour.","Editer utilisateurs");
-        } else {
-            admindisplay("<b>Erreurs:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Editer les utilsateurs");
-        }        
-        
-    }   
-        
-    $query = doquery("SELECT * FROM {{table}} WHERE id='$id' LIMIT 1", "users");
-    $row = mysql_fetch_array($query);
-    global $controlrow;
-    $diff1name = $controlrow["diff1name"];
-    $diff2name = $controlrow["diff2name"];
-    $diff3name = $controlrow["diff3name"];
-    $class1name = $controlrow["class1name"];
-    $class2name = $controlrow["class2name"];
-    $class3name = $controlrow["class3name"];
-
-$page = <<<END
-<b><u>Editer les utilsateurs</u></b><br /><br />
-<form action="admin.php?do=edituser:$id" method="post">
-<table width="90%">
-<tr><td width="20%">Joueur numéro:</td><td>{{id}}</td></tr>
-<tr><td width="20%">ID:</td><td>{{username}}</td></tr>
-<tr><td width="20%">Avatar classe:</td><td><img src="./images/avatar/num-{{avatar}}.gif" width="71" height="66"></td></tr>
-<tr><td width="20%">Email:</td><td><input type="text" name="email" size="30" maxlength="100" value="{{email}}" /></td></tr>
-<tr><td width="20%">Verifié:</td><td><input type="text" name="verify" size="30" maxlength="8" value="{{verify}}" /></td></tr>
-<tr><td width="20%">Nom du personnage:</td><td><input type="text" name="charname" size="30" maxlength="30" value="{{charname}}" /></td></tr>
-<tr><td width="20%">Date d'inscription:</td><td>{{regdate}}</td></tr>
-<tr><td width="20%">Dernière fois en ligne:</td><td>{{onlinetime}}</td></tr>
-<tr><td width="20%">Niv. d'accès:</td><td><select name="authlevel"><option value="0" {{auth0select}}>Simple joueur</option><option value="1" {{auth1select}}>Administrateur</option><option value="2" {{auth2select}}>Bloqué</option></select><br /><span class="small">Sélectionnez "bloqué" pour empêcher un utilisateur d'accèder au jeu.</span></td></tr>
-
-<tr><td colspan="2" style="background-color:#cccccc;">&nbsp;</td></tr>
-
-<tr><td width="20%">Latitude:</td><td><input type="text" name="latitude" size="5" maxlength="6" value="{{latitude}}" /></td></tr>
-<tr><td width="20%">Longitude:</td><td><input type="text" name="longitude" size="5" maxlength="6" value="{{longitude}}" /></td></tr>
-<tr><td width="20%">Difficulté:</td><td><select name="difficulty"><option value="1" {{diff1select}}>$diff1name</option><option value="2" {{diff2select}}>$diff2name</option><option value="3" {{diff3select}}>$diff3name</option></select></td></tr>
-<tr><td width="20%">Classe du personnage:</td><td><select name="charclass"><option value="1" {{class1select}}>$class1name</option><option value="2" {{class2select}}>$class2name</option><option value="3" {{class3select}}>$class3name</option></select></td></tr>
-
-<tr><td colspan="2" style="background-color:#cccccc;">&nbsp;</td></tr>
-
-<tr><td width="20%">Action en cours:</td><td><input type="text" name="currentaction" size="30" maxlength="30" value="{{currentaction}}" /></td></tr>
-<tr><td width="20%">Combat en cours:</td><td><input type="text" name="currentfight" size="5" maxlength="4" value="{{currentfight}}" /></td></tr>
-<tr><td width="20%">ID du monstre:</td><td><input type="text" name="currentmonster" size="5" maxlength="6" value="{{currentmonster}}" /></td></tr>
-<tr><td width="20%">HP du monstre:</td><td><input type="text" name="currentmonsterhp" size="5" maxlength="6" value="{{currentmonsterhp}}" /></td></tr>
-<tr><td width="20%">ID des sorts du monstre:</td><td><input type="text" name="currentmonsterimmune" size="5" maxlength="3" value="{{currentmonsterimmune}}" /></td></tr>
-<tr><td width="20%">Immunité du monstre:</td><td><input type="text" name="currentmonstersleep" size="5" maxlength="3" value="{{currentmonstersleep}}" /></td></tr>
-<tr><td width="20%">Dommage actuel d'Uber:</td><td><input type="text" name="currentuberdamage" size="5" maxlength="3" value="{{currentuberdamage}}" /></td></tr>
-<tr><td width="20%">Défense actuel d'Uber:</td><td><input type="text" name="currentuberdefense" size="5" maxlength="3" value="{{currentuberdefense}}" /></td></tr>
-
-<tr><td colspan="2" style="background-color:#cccccc;">&nbsp;</td></tr>
-
-<tr><td width="20%">HP actuel:</td><td><input type="text" name="currenthp" size="5" maxlength="6" value="{{currenthp}}" /></td></tr>
-<tr><td width="20%">MP actuel:</td><td><input type="text" name="currentmp" size="5" maxlength="6" value="{{currentmp}}" /></td></tr>
-<tr><td width="20%">TP actuel:</td><td><input type="text" name="currenttp" size="5" maxlength="6" value="{{currenttp}}" /></td></tr>
-<tr><td width="20%">Max HP:</td><td><input type="text" name="maxhp" size="5" maxlength="6" value="{{maxhp}}" /></td></tr>
-<tr><td width="20%">Max MP:</td><td><input type="text" name="maxmp" size="5" maxlength="6" value="{{maxmp}}" /></td></tr>
-<tr><td width="20%">Max TP:</td><td><input type="text" name="maxtp" size="5" maxlength="6" value="{{maxtp}}" /></td></tr>
-
-<tr><td colspan="2" style="background-color:#cccccc;">&nbsp;</td></tr>
-
-<tr><td width="20%">Niveau:</td><td><input type="text" name="level" size="5" maxlength="5" value="{{level}}" /></td></tr>
-<tr><td width="20%">Gils:</td><td><input type="text" name="gold" size="10" maxlength="8" value="{{gold}}" /></td></tr>
-<tr><td width="20%">Experience:</td><td><input type="text" name="experience" size="10" maxlength="8" value="{{experience}}" /></td></tr>
-<tr><td width="20%">Bonnus rubis:</td><td><input type="text" name="goldbonus" size="5" maxlength="5" value="{{goldbonus}}" /></td></tr>
-<tr><td width="20%">Bonnus experience :</td><td><input type="text" name="expbonus" size="5" maxlength="5" value="{{expbonus}}" /></td></tr>
-<tr><td width="20%">Force:</td><td><input type="text" name="strength" size="5" maxlength="5" value="{{strength}}" /></td></tr>
-<tr><td width="20%">Dextérité:</td><td><input type="text" name="dexterity" size="5" maxlength="5" value="{{dexterity}}" /></td></tr>
-<tr><td width="20%">Pouvoir d'attaque:</td><td><input type="text" name="attackpower" size="5" maxlength="5" value="{{attackpower}}" /></td></tr>
-<tr><td width="20%">Pouvoir de défense:</td><td><input type="text" name="defensepower" size="5" maxlength="5" value="{{defensepower}}" /></td></tr>
-
-<tr><td colspan="2" style="background-color:#cccccc;">&nbsp;</td></tr>
-
-<tr><td width="20%">ID de l'arme:</td><td><input type="text" name="weaponid" size="5" maxlength="5" value="{{weaponid}}" /></td></tr>
-<tr><td width="20%">ID del'armure:</td><td><input type="text" name="armorid" size="5" maxlength="5" value="{{armorid}}" /></td></tr>
-<tr><td width="20%">ID de la protection:</td><td><input type="text" name="shieldid" size="5" maxlength="5" value="{{shieldid}}" /></td></tr>
-<tr><td width="20%">ID de la fente 1:</td><td><input type="text" name="slot1id" size="5" maxlength="5" value="{{slot1id}}" /></td></tr>
-<tr><td width="20%">ID de la fente 2:</td><td><input type="text" name="slot2id" size="5" maxlength="5" value="{{slot2id}}" /></td></tr>
-<tr><td width="20%">ID de la fente 3:</td><td><input type="text" name="slot3id" size="5" maxlength="5" value="{{slot3id}}" /></td></tr>
-<tr><td width="20%">Nom de l'arme:</td><td><input type="text" name="weaponname" size="30" maxlength="30" value="{{weaponname}}" /></td></tr>
-<tr><td width="20%">Nom de l'armure:</td><td><input type="text" name="armorname" size="30" maxlength="30" value="{{armorname}}" /></td></tr>
-<tr><td width="20%">Nom de la protec.:</td><td><input type="text" name="shieldname" size="30" maxlength="30" value="{{shieldname}}" /></td></tr>
-<tr><td width="20%">Nom de la fente 1:</td><td><input type="text" name="slot1name" size="30" maxlength="30" value="{{slot1name}}" /></td></tr>
-<tr><td width="20%">Nom de la fente 2:</td><td><input type="text" name="slot2name" size="30" maxlength="30" value="{{slot2name}}" /></td></tr>
-<tr><td width="20%">Nom de la fente 3:</td><td><input type="text" name="slot3name" size="30" maxlength="30" value="{{slot3name}}" /></td></tr>
-
-<tr><td colspan="2" style="background-color:#cccccc;">&nbsp;</td></tr>
-
-<tr><td width="20%">Code drop:</td><td><input type="text" name="dropcode" size="5" maxlength="8" value="{{dropcode}}" /></td></tr>
-<tr><td width="20%">Sorts:</td><td><input type="text" name="spells" size="50" maxlength="50" value="{{spells}}" /></td></tr>
-<tr><td width="20%">Ville:</td><td><input type="text" name="towns" size="50" maxlength="50" value="{{towns}}" /></td></tr>
-
-</table>
-<input type="submit" name="submit" value="Valider" /> <input type="reset" name="reset" value="Annuler" />
-</form>
-END;
-
-    if ($row["authlevel"] == 0) { $row["auth0select"] = "selected=\"selected\" "; } else { $row["auth0select"] = ""; }
-    if ($row["authlevel"] == 1) { $row["auth1select"] = "selected=\"selected\" "; } else { $row["auth1select"] = ""; }
-    if ($row["authlevel"] == 2) { $row["auth2select"] = "selected=\"selected\" "; } else { $row["auth2select"] = ""; }
-    if ($row["charclass"] == 1) { $row["class1select"] = "selected=\"selected\" "; } else { $row["class1select"] = ""; }
-    if ($row["charclass"] == 2) { $row["class2select"] = "selected=\"selected\" "; } else { $row["class2select"] = ""; }
-    if ($row["charclass"] == 3) { $row["class3select"] = "selected=\"selected\" "; } else { $row["class3select"] = ""; }
-    if ($row["difficulty"] == 1) { $row["diff1select"] = "selected=\"selected\" "; } else { $row["diff1select"] = ""; }
-    if ($row["difficulty"] == 2) { $row["diff2select"] = "selected=\"selected\" "; } else { $row["diff2select"] = ""; }
-    if ($row["difficulty"] == 3) { $row["diff3select"] = "selected=\"selected\" "; } else { $row["diff3select"] = ""; }
-    
-    $page = parsetemplate($page, $row);
-    admindisplay($page, "Editer utilisateurs");
-    
-}
-
-function addnews() {
-    
-    if (isset($_POST["submit"])) {
-        
-        extract($_POST);
-        $errors = 0;
-        $errorlist = "";
-        if ($content == "") { $errors++; $errorlist .= "Vous devez écrire une nouvelle.<br />"; }
-        
-		 $content = addslashes($content);
-        if ($errors == 0) { 
-            $query = doquery("INSERT INTO {{table}} SET id='',postdate=NOW(),content='$content'", "news");
-            admindisplay("La nouvelle vient d'êtres ajouté.","Ajouter une nouvelle");
-        } else {
-            admindisplay("<b>Erreurs:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Ajouter une nouvelle");
-        }        
-        
-    }   
-        
-$page = <<<END
-<b><u>Ajouter une nouvelle</u></b><br /><br />
-<form action="admin.php?do=news" method="post">
-Après avoir rédigé votre nouvelle, cliquez sur Envoyer pour l'afficher tout de suite dans toutes les villes.<br />
-<textarea name="content" rows="5" cols="50"></textarea><br />
-<input type="submit" name="submit" value="Envoyer" /> <input type="reset" name="reset" value="Annuler" />
-</form>
-END;
-    
-    admindisplay($page, "Ajouter une nouvelle");
-    
-}
-
-function addsondage() {
-    
-    if (isset($_POST["submit"])) {
-        
-        extract($_POST);
-        $errors = 0;
-        $errorlist = "";
-        if ($question == "") { $errors++; $errorlist .= "La question est obligatoire.<br />"; }
-	        if ($reponse1 == "") { $errors++; $errorlist .= "La réponse 1  est obligatoire.<br />"; }
-		        if ($reponse2 == "") { $errors++; $errorlist .= "La réponse 2 est obligatoire.<br />"; }
-        
-        if ($errors == 0) { 
-           $query = doquery("INSERT INTO {{table}} SET id='',question='$question',reponse1='$reponse1',reponse2='$reponse2',reponse3='$reponse3',reponse4='$reponse4'", "sondage");
-            admindisplay("Le sondage vient d'êtres ajouté.","Ajouter un sondage");
-        } else {
-            admindisplay("<b>Erreurs:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Ajouter un sondage");
-        }        
-        
-    }   
-        
-        
-$page = '
-<b><u>Ajouter un sondage</u></b><br /><br />
-<form method="post" action="admin.php?do=sondage">
-Question : <input type="text" name="question" size="20"><br>
-Réponse 1 : <input type="text" name="reponse1" size="20"><br>
-Réponse 2 : <input type="text" name="reponse2" size="20"><br>
-Réponse 3 (si nécessaire) : <input type="text" name="reponse3" size="20"><br>
-Réponse 4 (si nécessaire) : <input type="text" name="reponse4" size="20"><br>
-<br><input type="submit" name="submit" value="Créer">
-</form>
+<img src="images/jeu/puce4.gif" alt=""> <b>maxhp:</b> Donne des points hit (HP)<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>maxmp:</b> Donne des points de magie (MP)<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>maxtp:</b> Donne des points de voyages<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>goldbonus:</b> Donne un bonnus de rubis (en pourcentage)<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>expbonus:</b> Donne un bonnus d\'expérience (en pourcentage)<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>strength:</b> Donne de la force (qui s\'ajoute également au pouvoir d\'attaque)<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>dexterity:</b> Donne de la dextérité (qui s\'ajoute également au pouvoir de défense)<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>attackpower:</b> Donne un pouvoir d\'attaque<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>defensepower:</b> Donne un pouvoir de défense<br><br>
 ';
-    
-    admindisplay($page, "Ajouter un sondage");
+}
+   
+    display($page, "Editer les objets");
     
 }
+
+
+function drops() {// Visualisation objets perdus.
+
+global $page;
+    
+    $dropsquery = doquery("SELECT id, name, attribute1, attribute2 FROM {{table}} ORDER BY name", "drops");
+    $page .='<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les objets perdus:</b></span><br><br>Pour éditer un objet, cliquez sur celui de votre choix, dans la liste ci-dessous.<br><br>';
+     
+  while ($dropsrow = mysql_fetch_array($dropsquery)) {
+
+  $page .='<div class="bloc_rose"><div style="float:left"><img src="images/objets/'.$dropsrow['id'].'.jpg" alt="'.$dropsrow['name'].'"></div><a href="?do=editdrop:'.$dropsrow['id'].'"><b><span class="mauve2">'.$dropsrow['name'].'</span></b></a> - <i>Attribut 1: <span class="mauve1">'.$dropsrow['attribute1'].'</span> - Attribut 2: <span class="mauve1">'.$dropsrow['attribute2'].'</span></i> <br><span class="taille1">Description bientot ici</span></div><br>';
+
+  }
+  if (mysql_num_rows($dropsquery) == 0) { $page .= '<span class="alerte"> Il y a aucun objets perdus de trouvé!</span><br><br>'; }
+  $page .='<br><a href="index.php">» retourner au jeu</a><br><br>';
+  
+  display($page, 'Editer les objets perdus');
+    
+}
+
+
+function editdrop($id) {// Edition objets perdus.
+
+global $page;
+    
+$dropsquery = doquery("SELECT * FROM {{table}} WHERE id='$id' LIMIT 1", "drops");
+$dropsrow = mysql_fetch_array($dropsquery);	
+	
+if (isset($_POST['submit'])) {
+        
+      extract($_POST);
+      $errors = 0;
+      $errorlist = "";
+      if (trim($name) == "") { $errors++; $errorlist .= "- Le nom de l'objet est exigé.<br>"; }
+      if (preg_match("/[\^*+<>?#]/", $name)==1) { $errors++; $errorlist .= "- Le nom de l'objet doit être écrit en caractères alphanumériques.<br>"; }
+      if (trim($mlevel) == "") { $errors++; $errorlist .= "- Le niveau de l'objet est exigé.<br>"; }
+      if (!is_numeric($mlevel)) { $errors++; $errorlist .= "- Le niveau de l'objet doit être en chiffre.<br>"; }
+      if (trim($attribute1) == ""|| $attribute1 == "Aucun") { $errors++; $errorlist .= "- Le premier attribut est exigé.<br>"; }
+      if (trim($attribute2) == "") { $attribute2 = "Aucun"; }
+		
+      if ($errors == 0) { 
+          $update = doquery("UPDATE {{table}} SET name='".addslashes($name)."',mlevel='$mlevel',attribute1='$attribute1',attribute2='$attribute2' WHERE id='".$dropsrow['id']."' LIMIT 1", "drops");
+      $page .='L\'objet perdu '.$dropsrow['name'].' a été mis à jour!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
+      } else {
+      $page .= 'La mise à jour n\'a pas pu se faire, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=editdrop:'.$id.'">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
+        }        
+ }else{
+   
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les objets perdus (par les monstres):</b></span><br><br>
+
+<form enctype="multipart/form-data" action="" method="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">ID:</td><td>'.$dropsrow['id'].'<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom:</td><td><input type="text" name="name" size="30" maxlength="30" value="'.$dropsrow['name'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Image:</td><td><img src="images/objets/'.$dropsrow['id'].'.jpg" alt="'.$dropsrow['name'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Niveau du monstre:</td><td><input type="text" name="mlevel" size="5" maxlength="10" value="'.$dropsrow['mlevel'].'"><br>Niveau de probabilité pour qu\'un monstre laisse tomber cet objet.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Attribut 1:</td><td><input type="text" name="attribute1" size="30" maxlength="50" value="'.$dropsrow['attribute1'].'"><br>Doit être un code spécial.  Le premier attribut ne peut pas être vide. Éditez ce champ très soigneusement, parce que les erreurs d\'orthographe peuvent créer des problèmes dans le jeu.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Attribut 2:</td><td><input type="text" name="attribute2" size="30" maxlength="50" value="'.$dropsrow['attribute2'].'"><br>Laissez "Aucun" pour ne mettre aucun attribut spécial. Sinon éditez ce champ très soigneusement, parce que les erreurs d\'orthographe peuvent créer des problèmes dans le jeu.<br><br></td></tr>
+<tr valign="top"><td style="width:1px"></td><td>
+
+<div style="text-align: center"><input type="submit" name="submit" value="Valider"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"></div></td></tr>
+</table>
+
+</form><br>
+<span class="mauve1"><b>Attributs spéciaux des objets:</b></span><br>
+Des attributs spéciaux peuvent être ajoutés à tous les objets, ce qui a pour but d\'augmenter les capacités des personnages. Par exemple si vous voulez qu\'un objet donne 50 HP à un personnage, il suffit d\'écrire maxhp,50. Ceci marche aussi dans le sens négatif. Donc si vous voulez qu\'un objet enlève 50 HP à un personnage, il suffit d\'écrire maxhp,-50.<br><br>
+
+<img src="images/jeu/puce4.gif" alt=""> <b>maxhp:</b> Donne des points hit (HP)<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>maxmp:</b> Donne des points de magie (MP)<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>maxtp:</b> Donne des points de voyages<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>goldbonus:</b> Donne un bonnus de rubis (en pourcentage)<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>expbonus:</b> Donne un bonnus d\'expérience (en pourcentage)<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>strength:</b> Donne de la force (qui s\'ajoute également au pouvoir d\'attaque)<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>dexterity:</b> Donne de la dextérité (qui s\'ajoute également au pouvoir de défense)<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>attackpower:</b> Donne un pouvoir d\'attaque<br>
+<img src="images/jeu/puce4.gif" alt=""> <b>defensepower:</b> Donne un pouvoir de défense<br><br>
+';
+ } 
+    
+ display($page, 'Editer les objets perdus');
+    
+}
+
+
+function towns() {// Visualisation des villes.
+
+global $page;
+    
+  $townquery = doquery("SELECT id, name, latitude, longitude, innprice FROM {{table}} ORDER BY id", "towns");
+  $page .='<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les villes:</b></span><br><br>Pour éditer une ville, cliquez sur celle de votre choix, dans la liste ci-dessous.<br><br>';
+  
+  while ($townrow = mysql_fetch_array($townquery)) {
+  $page .='<div class="bloc_rose"><a href="?do=edittown:'.$townrow['id'].'"><b><span class="mauve2">'.$townrow['name'].'</span></b></a> - <i>Lat.: <span class="mauve1">'.$townrow['latitude'].'</span> - Long.: <span class="mauve1">'.$townrow['longitude'].'</span></i> <span class="alerte">('.$townrow['innprice'].' rubis l\'auberge)</span></div><br>';
+  }
+  if (mysql_num_rows($townquery) == 0) { $page .= '<span class="alerte"> Il y a aucune ville de trouvé!</span><br><br>'; }
+  $page .='<br><a href="index.php">» retourner au jeu</a><br><br>';
+  
+  display($page, 'Editer les villes');
+    
+}
+
+
+function edittown($id) {// Edition des villes.
+
+global $page;
+
+$townquery = doquery("SELECT * FROM {{table}} WHERE id='$id' ", "towns");
+$townrow = mysql_fetch_array($townquery);
+    
+   if (isset($_POST['submit'])) {
+        
+        extract($_POST);
+        $errors = 0;
+        $errorlist = "";
+        if (trim($name) == "") { $errors++; $errorlist .= "- Le nom est exigé.<br>"; }
+		if (preg_match("/[\^*+<>?#]/", $name)==1) { $errors++; $errorlist .= "- Le nom de la ville doit être écrit en caractères alphanumériques.<br>"; }
+        if (trim($latitude) == "") { $errors++; $errorlist .= "- La latitude est exigée.<br>"; }
+        if (!is_numeric($latitude)) { $errors++; $errorlist .= "- La latitude doit être un nombre.<br>"; }
+        if (trim($longitude) == "") { $errors++; $errorlist .= "- La longitude est exigée.<br>"; }
+        if (!is_numeric($longitude)) { $errors++; $errorlist .= "- La longitude doit être un nombre.<br>"; }
+        if (trim($innprice) == "") { $errors++; $errorlist .= "- Le prix de l'auberge est exigé.<br>"; }
+        if (!is_numeric($innprice)) { $errors++; $errorlist .= "- Le prix de l'auberge doir être un nombre.<br>"; }
+        if (trim($mapprice) == "") { $errors++; $errorlist .= "- Le prix de la carte est exigé.<br>"; }
+        if (!is_numeric($mapprice)) { $errors++; $errorlist .= "- Le prix de la carte doit être un nombre.<br>"; }
+        if (trim($travelpoints) == "") { $errors++; $errorlist .= "- Les points de voyages sont exigés.<br>"; }
+        if (!is_numeric($travelpoints)) { $errors++; $errorlist .= "- Les points de voyages doivent êtres des nombres.<br>"; }
+        if (trim($itemslist) == "") { $errors++; $errorlist .= "- La liste des objets est exigée.<br>"; }
+        
+        if ($errors == 0) { 
+            $update = doquery("UPDATE {{table}} SET name='".addslashes($name)."', latitude='$latitude',longitude='$longitude',innprice='$innprice',mapprice='$mapprice',travelpoints='$travelpoints',itemslist='$itemslist' WHERE id='".$townrow['id']."' LIMIT 1", "towns");
+        $page .='La ville '.$townrow['name'].' a été mis à jour!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
+        } else {
+        $page .= 'La mise à jour n\'a pas pu se faire, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=edittown:'.$id.'">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
+        }         
+    }else{
+   
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les villes:</b></span><br><br>
+
+<form enctype="multipart/form-data" action="" method="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">ID:</td><td>'.$townrow['id'].'<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom:</td><td><input type="text" name="name" size="30" maxlength="30" value="'.$townrow['name'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Latitude:</td><td><input type="text" name="latitude" size="5" maxlength="10" value="'.$townrow['latitude'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Longitude:</td><td><input type="text" name="longitude" size="5" maxlength="10" value="'.$townrow['longitude'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Prix de l\'auberge:</td><td><input type="text" name="innprice" size="5" maxlength="10" value="'.$townrow['innprice'].'"> rubis<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Prix de la carte:</td><td><input type="text" name="mapprice" size="5" maxlength="10" value="'.$townrow['mapprice'].'"> rubis<br>Prix de la carte de cette ville.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Points de voyage:</td><td><input type="text" name="travelpoints" size="5" maxlength="10" value="'.$townrow['travelpoints'].'"><br>Nombre de Points de voyage (TP) consommés pour aller à cette ville.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Liste des objets:</td><td><input type="text" name="itemslist" size="30" maxlength="200" value="'.$townrow['itemslist'].'"><br>Liste des objets disponible dans le magasin de cette ville. (Exemple: 1,2,3,6,9,10,13,20) Note: L\'objet numéro 1 correspond à l\'ID numéro 1 (pour voir l\'ID des objets rendez vous dans la rubrique Editer objets).<br><br></td></tr>
+<tr valign="top"><td style="width:1px"></td><td>
+
+<div style="text-align: center"><input type="submit" name="submit" value="Valider"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"></div></td></tr>
+</table>
+</form><br><br>';
+ }
  
-function blocs() {
+  display($page, 'Editer les villes');
+ 
+}
+
+
+function monsters() {// Visualisation des monstres.
     
-    if (isset($_POST["submit"])) {
+global $controlrow, $page;
+    
+  $statquery = doquery("SELECT level FROM {{table}} ORDER BY level DESC LIMIT 1", "monsters");
+  $statrow = mysql_fetch_array($statquery);
+    
+  $monstersquery = doquery("SELECT id, name, immune, level, maxhp FROM {{table}} ORDER BY name", "monsters");
+  $page .='<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les monstres:</b></span><br><br>Pour éditer un monstre, cliquez sur celui de votre choix, dans la liste ci-dessous.<br><br>';
+    
+  if (($controlrow['gamesize']/5) != $statrow['level']) {
+       $page .= '<b>Note:</b> Le niveau élevé des monstre ne s\'assortit pas avec le taille de la carte.  Le niveau le plus élevé de monstre devrait être '.($controlrow['gamesize']/5).', le votre est '.$statrow['level'].'. Veuillez modifier la valeur avant d\'ouvrir le jeu au public.<br><br>';
+  } else { $page .= 'Le niveau des monstres correspondent parfaitement avec la taille de la carte, aucunes modifications n\'est exigé.<br><br>'; }
+     
+    while ($monstersrow = mysql_fetch_array($monstersquery)) {
+     if ($monstersrow['immune'] == 0) {$immune = "rien"; }
+	 if ($monstersrow['immune'] == 1) {$immune = "Attaques"; }
+     if ($monstersrow['immune'] == 2) {$immune = "Attaques et sommeils"; }
+  $page .='<div class="bloc_rose"><div style="float:left"><img src="images/monstres/'.$monstersrow['id'].'.jpg" alt="'.$monstersrow['name'].'"></div><a href="?do=editmonster:'.$monstersrow['id'].'"><b><span class="mauve2">'.$monstersrow['name'].'</span></b></a> - <i>Niveau: <span class="mauve1">'.$monstersrow['level'].'</span> - Maxhp: <span class="mauve1">'.$monstersrow['maxhp'].'</span> - Immunisé contre: <span class="mauve1">'.$immune.'</span></i><br></div><br>';
+    }
+  if (mysql_num_rows($monstersquery) == 0) { $page .= '<span class="alerte"> Il y a aucun monstres de trouvé!</span><br><br>'; }
+  $page .='<br><a href="index.php">» retourner au jeu</a><br><br>';
+  
+  display($page, "Editer les monstres");
+    
+}
+
+
+function editmonster($id) {// Edition des monstres.
+
+
+global $page;
+
+$monstersquery = doquery("SELECT * FROM {{table}} WHERE id='$id' ", "monsters");
+$monstersrow = mysql_fetch_array($monstersquery);
+    
+      if (isset($_POST['submit'])) {
         
         extract($_POST);
         $errors = 0;
         $errorlist = "";
-	        if ($bloc3 == "") { $errors++; $errorlist .= "Le bloc 3 est obligatoire! (copyright).<br />"; }
-        	$bloc1 = addslashes($bloc1);
-		$bloc2 = addslashes($bloc2);
-		$bloc3 = addslashes($bloc3);
-		$bloc4 = addslashes($bloc4);
-		$bloc5 = addslashes($bloc5);
+         if (trim($name) == "") { $errors++; $errorlist .= "- Le nom est exigé.<br>"; }
+		if (preg_match("/[\^*+<>?#]/", $name)==1) { $errors++; $errorlist .= "- Le nom du monstre doit être écrit en caractères alphanumériques.<br>"; }
+         if (trim($maxhp) == "") { $errors++; $errorlist .= "- Le max de HP est exigé.<br>"; }
+        if (!is_numeric($maxhp)) { $errors++; $errorlist .= "- Le max de HP doit être un nombre.<br>"; }
+         if (trim($maxdam) == "") { $errors++; $errorlist .= "- Le max de dommage est exigé.<br>"; }
+        if (!is_numeric($maxdam)) { $errors++; $errorlist .= "- Le max de dommage doit être un nombre.<br>"; }
+         if (trim($armor) == "") { $errors++; $errorlist .= "- Le niveau de l'armure est exigé.<br>"; }
+        if (!is_numeric($armor)) { $errors++; $errorlist .= "- Le niveau de l'armure doir être un nombre.<br>"; }
+         if (trim($level) == "") { $errors++; $errorlist .= "- Le niveau du monstre est exigé.<br>"; }
+        if (!is_numeric($level)) { $errors++; $errorlist .= "- Le niveau du monstre doit être un nombre.<br>"; }
+         if (trim($maxexp) == "") { $errors++; $errorlist .= "- Le max d'expérience est exigé.<br>"; }
+        if (!is_numeric($maxexp)) { $errors++; $errorlist .= "- Le max d'expérience doit être un nombre.<br>"; }
+         if (trim($maxgold) == "") { $errors++; $errorlist .= "- Le max de rubis est exigé.<br>"; }
+        if (!is_numeric($maxgold)) { $errors++; $errorlist .= "- Le max de rubis doit être un nombre.<br>"; }
 		
         if ($errors == 0) { 
-           $query = doquery("INSERT INTO {{table}} SET id='',bloc1='$bloc1',bloc2='$bloc2',bloc3='$bloc3',bloc4='$bloc4',bloc5='$bloc5'", "blocs");
-            admindisplay("Les blocs ont été modifiés.","Editer les blocs");
+            $update = doquery("UPDATE {{table}} SET name='".addslashes($name)."',maxhp='$maxhp',maxdam='$maxdam',armor='$armor',level='$level',maxexp='$maxexp',maxgold='$maxgold',immune='$immune' WHERE id='".$monstersrow['id']."' LIMIT 1", "monsters");
+        $page .='Le monstre '.$monstersrow['name'].' a été mis à jour!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
         } else {
-            admindisplay("<b>Erreurs:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Editer les blocs");
-        }        
-        
-    }   
-        
-        
-$page = '
-<b><u>Editer les blocs</u></b><br /><br />
-<form method="post" action="admin.php?do=blocs">
-Bloc 1 : <input type="text" name="bloc1" size="20"><br>Indiquez l\'url du deuxième logo de la sociétée (optionnel)<br>
-Bloc 2 : <input type="text" name="bloc2" size="20"><br>Indiquez l\'url du logo de la sociétée (optionnel)<br>
-Bloc 3 : <input type="text" name="bloc3" size="20"><br>Indiquez le texte copyright de la sociétée (oligatoire)<br>
-Bloc 4:  <input type="text" name="bloc4" size="20"><br>Indiquez le deuxième texte copyright de la sociétée (optionnel)<br>
-Bloc 5 : <input type="text" name="bloc5" size="20"><br>Indiquez le troisième texte copyright de la sociétée (optionnel)<br>
-<br><input type="submit" name="submit" value="Valider"><br><br><b>Attention:</b> Vous ne pouvez pas modifier une seule info. Vous devez réinsérer tous les liens des logos et le texte du copyright (indispensable) en même temps.
-</form>
-';
-    
-    admindisplay($page, "Editer blocs du bas");
-    
-}  
-
-function babble() 
-{    
-if (isset($_POST["submit"])) 
-{ 
-mysql_query("TRUNCATE TABLE `rpg_babble`"); 
-} 
-$page = ' 
-<b><u> Vider Le Chat box </u></b><br /><br /> 
-<form method="post" action="admin.php?do=babble"> 
-<input type="submit" name="submit" value="Valider" /> 
-<br><br><b><font color="red">! Attention !</font></b> Vider le babble entrenera la perte de tout les messages figurant dedans, il sera impossible de les récupérer ! 
-</form> 
-'; 
-  if (isset($_POST["submit"])) {
-        
-        extract($_POST);
-        $errors = 0;
-        $errorlist = "";
-        
-        if ($errors == 0) { 
-           
-            admindisplay("La chatbox à été vidée","vider le chatbox");
-        } else {
-            admindisplay("<b>Erreurs:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Editer les blocs");
-        }        
-        
-    } 
-  admindisplay($page, "vider le chatbox"); 
-} 
-
-function message() 
-{ 
-    if (!isset ($_POST['envoi'])){ 
- $page = '<b><u> Envoyer un mail </u></b><br /><br /> 
-    <form action="'.$_SERVER['PHP_SELF'].'?do=message" method=POST> 
-    Email de l\'expediteur:<input type=text name=email_expediteur size=20><br>Sujet du mail:<input type=text name=sujet_mail size=20><br> 
-    <br>Message <br><textarea rows=5 name=message_envoi cols=50></textarea><br><br><input type=submit name=envoi value="Envoyer le message"></form>'; 
-    } 
-    else{ 
-    //On regarde si tous les champs ont été remplis 
-   if (empty ($_POST['email_expediteur']) || empty ($_POST['sujet_mail']) || empty ($_POST['message_envoi'])){ 
-   echo '<script language=javascript>alert ("Vous devez remplir tous les champs!!")</script>'; 
-       echo '<script language=javascript>window.location="'.$_SERVER['PHP_SELF'].'?do=message"</script>'; 
-   } 
-   else{ 
-   //On sélectionne tous les emails et on envoie le message 
-   $selection="select * from rpg_users where verify=1"; 
-   $sql=mysql_query($selection); 
-       while ($a_row=mysql_fetch_assoc($sql)){ 
-        //La récupération étant terminée, on envoie le message à chaque membre! 
-       $to = "$a_row[email]"; 
-       $sujet = "$_POST[sujet_mail]"; 
-       //--- la structure du mail ----// 
-       $from  = "From:$_POST[email_expediteur]\n"; 
-       $from .= "MIME-version: 1.0\n"; 
-       $from .= "Content-type: text/html; charset= iso-8859-1\n"; 
- //--- Corps du message ---// 
-       $message_def="$_POST[message_envoi]\n"; 
-       //--- on envoie l'email ---// 
-       mail($to,$sujet,$message_def,$from); 
-       } 
-    if (isset($_POST["envoi"])) {
-        
-        extract($_POST);
-        $errors = 0;
-        $errorlist = "";
-        if ($email_expediteur == "") { $errors++; $errorlist .= "Entrez l'email de l'expediteur.<br />"; }
-	        if ($message_envoi == "") { $errors++; $errorlist .= "Entrez votre message.<br />"; }
-        
-        if ($errors == 0) { 
-           
-            admindisplay("Le mail a été envoyé","Editer un mail");
-        } else {
-            admindisplay("<b>Erreurs:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Editer les blocs");
-        }        
-        
-    } 
-   } 
-    } 
+        $page .= 'La mise à jour n\'a pas pu se faire, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=editmonster:'.$id.'">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
+        }          
+    }else{
+ 
+  if ($monstersrow['immune'] == 0) { $monstersrow['immune0select'] = 'selected="selected" '; } else { $monstersrow['immune0select'] = ""; }
+  if ($monstersrow['immune'] == 1) { $monstersrow['immune1select'] = 'selected="selected" '; } else { $monstersrow['immune1select'] = ""; }
+  if ($monstersrow['immune'] == 2) { $monstersrow['immune2select'] = 'selected="selected" '; } else { $monstersrow['immune2select'] = ""; }
+  if ($monstersrow['immune'] == 3) { $monstersrow['immune3select'] = 'selected="selected" '; } else { $monstersrow['immune3select'] = ""; }
 
   
-  admindisplay($page, "Editer un mail"); 
-} 
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les monstres:</b></span><br><br>
 
-function newsaccueil() {
+<form enctype="multipart/form-data" action="" method="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">ID:</td><td>'.$monstersrow['id'].'<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom:</td><td><input type="text" name="name" size="30" maxlength="30" value="'.$monstersrow['name'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Portait:</td><td><img src="images/monstres/'.$monstersrow['image'].'.jpg"  width="71" height="59" alt="'.$monstersrow['name'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Max de HP:</td><td><input type="text" name="maxhp" size="5" maxlength="10" value="'.$monstersrow['maxhp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Max de dommages:</td><td><input type="text" name="maxdam" size="5" maxlength="10" value="'.$monstersrow['maxdam'].'"><br>Agit en fonction du pouvoir d\'attaque du joueur.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Armures:</td><td><input type="text" name="armor" size="5" maxlength="10" value="'.$monstersrow['armor'].'"><br>Agit en fonction du pouvoir de défense du joueur.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Niveau du monstre:</td><td><input type="text" name="level" size="5" maxlength="10" value="'.$monstersrow['level'].'"><br>Plus le niveau sera élevé, plus les joueurs seront confronté au monstre sur une latitude et une longitude élevée.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Max d\'experience:</td><td><input type="text" name="maxexp" size="5" maxlength="10" value="'.$monstersrow['maxexp'].'"><br>Le maximum d\'expérience qui sera donné au joueur, après avoir battu le monstre.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Max de rubis:</td><td><input type="text" name="maxgold" size="5" maxlength="10" value="'.$monstersrow['maxgold'].'"><br>Le maximum de rubis qui sera donné au joueur, après avoir battu le monstre.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Immunisé contre les sorts:</td><td><select name="immune"><option value="0" '.$monstersrow['immune0select'].'>Aucuns sorts</option><option value="1" '.$monstersrow['immune1select'].'>Sorts d\'attaques</option><option value="2" '.$monstersrow['immune2select'].'>Sorts d\'attaques & Sommeils</option></select><br>Déterminez à quels types de sorts le monstre sera immunisé.<br><br></td></tr>
+<tr valign="top"><td style="width:1px"></td><td>
+
+<div style="text-align: center"><input type="submit" name="submit" value="Valider"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"></div></td></tr>
+</table>
+</form><br><br>
+';
+  } 
     
-    if (isset($_POST["submit"])) {
+ display($page, 'Editer les monstres');
+    
+}
+
+
+function spells() {// Visualisation des sorts.
+
+global $page;
+    
+$spellsquery = doquery("SELECT id, name, attribute, type FROM {{table}} ORDER BY name", "spells");
+$page .='<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les sorts:</b></span><br><br>Pour éditer un objet, cliquez sur celui de votre choix, dans la liste ci-dessous.<br><br>';
+    
+  while ($spellsrow = mysql_fetch_array($spellsquery)) {
+   
+     if ($spellsrow['type'] == 1) {$type = "Soin"; }
+	 if ($spellsrow['type'] == 2) {$type = "Attaque"; }
+     if ($spellsrow['type'] == 3) {$type = "Sommeil"; }
+     if ($spellsrow['type'] == 4) {$type = "Attaque d'Uber"; }
+     if ($spellsrow['type'] == 5) {$type = "Défense d'Uber"; }
+	 
+    $page .='<div class="bloc_rose"><a href="?do=editspell:'.$spellsrow['id'].'"><b><span class="mauve2">'.$spellsrow['name'].'</span></b></a> - <i>Attribut.: <span class="mauve1">'.$spellsrow['attribute'].'</span> - Type: <span class="mauve1">'.$type.'</span></i></div><br>';    }
+  if (mysql_num_rows($spellsquery) == 0) { $page .= '<span class="alerte"> Il y a aucun sorts de trouvé!</span><br><br>'; }
+  $page .='<br><a href="index.php">» retourner au jeu</a><br><br>';
+   
+ display($page, 'Editer les sorts');
+    
+}
+
+
+function editspell($id) {// Edition des sorts.
+
+global $page;
+ 
+$spellsquery = doquery("SELECT * FROM {{table}} WHERE id='$id' ", "spells");
+$spellsrow = mysql_fetch_array($spellsquery);
+  
+  if (isset($_POST['submit'])) {
         
         extract($_POST);
         $errors = 0;
         $errorlist = "";
-         $content = addslashes($content);
-		 $titre = addslashes($titre);
+         if (trim($name) == "") { $errors++; $errorlist .= "- Le nom est exigé.<br>"; }
+		if (preg_match("/[\^*+<>?#]/", $name)==1) { $errors++; $errorlist .= "- Le nom du sorts doit être écrit en caractères alphanumériques.<br>"; }
+         if (trim($mp) == "") { $errors++; $errorlist .= "- Les MP sont exigés.<br>"; }
+        if (!is_numeric($mp)) { $errors++; $errorlist .= "- Les MP doivent êtres des nombres.<br>"; }
+         if (trim($attribute) == "") { $errors++; $errorlist .= "- L\'attribut est exigé.<br>"; }
+        if (!is_numeric($attribute)) { $errors++; $errorlist .= "- L\'attribut doit être un nombre.<br>"; } 
+		
         if ($errors == 0) { 
-           $query = doquery("INSERT INTO {{table}} SET id='',postdate=NOW(),titre='$titre', content='$content'", "newsaccueil");
-            admindisplay("La new a été Ajoutée.","Editer la new 1");
+            $update = doquery("UPDATE {{table}} SET name='".addslashes($name)."',mp='$mp',attribute='$attribute',type='$type' WHERE id='".$spellsrow['id']."' LIMIT 1", "spells");
+        $page .='Le sorts '.$spellsrow['name'].' a été mis à jour!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
         } else {
-            admindisplay("<b>Erreurs:</b><br /><div style=\"color:red;\">$errorlist</div><br />Veuillez retourner et essayer encore.", "Editer la new");
+        $page .= 'La mise à jour n\'a pas pu se faire, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=editspell:'.$id.'">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
+        }           
+    }else{
+  
+  if ($spellsrow['type'] == 1) { $spellsrow['type1select'] = 'selected="selected" '; } else { $spellsrow['type1select'] = ""; }
+  if ($spellsrow['type'] == 2) { $spellsrow['type2select'] = 'selected="selected" '; } else { $spellsrow['type2select'] = ""; }
+  if ($spellsrow['type'] == 3) { $spellsrow['type3select'] = 'selected="selected" '; } else { $spellsrow['type3select'] = ""; }
+  if ($spellsrow['type'] == 4) { $spellsrow['type4select'] = 'selected="selected" '; } else { $spellsrow['type4select'] = ""; }
+  if ($spellsrow['type'] == 5) { $spellsrow['type5select'] = 'selected="selected" '; } else { $spellsrow['type5select'] = ""; }
+
+	
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les sorts:</b></span><br><br>
+
+<form enctype="multipart/form-data" action="" method="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">ID:</td><td>'.$spellsrow['id'].'<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom:</td><td><input type="text" name="name" size="30" maxlength="30" value="'.$spellsrow['name'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Points de magie:</td><td><input type="text" name="mp" size="5" maxlength="10" value="'.$spellsrow['mp'].'"><br>MP requis pour éxécuter ce sort.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Attribut:</td><td><input type="text" name="attribute" size="5" maxlength="10" value="'.$spellsrow['attribute'].'"><br>Valeur numérique du type de sorts que vous avez choisi ci-dessous.<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Type:</td><td><select name="type"><option value="1" '.$spellsrow['type1select'].'>Soin</option><option value="2" '.$spellsrow['type2select'].'>Attaque</option><option value="3" '.$spellsrow['type3select'].'>Sommeil</option><option value="4" '.$spellsrow['type4select'].'>Attaque d\'Uber</option><option value="5" '.$spellsrow['type5select'].'>Défense d\'Uber</option></select><br>- "Soin" redonne des HP au joueur.<br>- "Attaque" cause des dommages au monstre.<br>- "Sommeil" endort le monstre. Note: Si vous mettez l\'attribut du sommeil sur 2, le monstre aura très peu de chance de s\'endormir, par contre si vous le mettez sur 15, le monstre s\'endormira plus facilement (l\'attribut du sommeil varie de 1 à 15).<br>- L\'attaque d\'Uber augmente les dommages d\'attaque totale de 50% sur le monstre, si vous mettez par exemple dans les attributs 50.<br>- La défense d\'Uber augmente la défense totale du perso de 50%, si par exemple vous mettez dans les attributs 50.<br><br> 
+<tr valign="top"><td style="width:1px"></td><td>
+
+<div style="text-align: center"><input type="submit" name="submit" value="Valider"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"></div></td></tr>
+</table>
+</form><br><br>';  
+ } 
+    
+  display($page, 'Editer les sorts');
+    
+}
+
+
+function levels() {// Visualisation des niveaux.
+
+global $page;
+
+  $levelsquery = doquery("SELECT id FROM {{table}} ORDER BY id DESC LIMIT 1", "levels");
+  $levelsrow = mysql_fetch_array($levelsquery);
+
+  $options = '';
+  for($i=2; $i<$levelsrow['id']; $i++) {
+  $options .= '<option value="'.$i.'">'.$i.'</option>';
+  }
+    
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les niveaux:</b></span><br><br>
+
+<form enctype="multipart/form-data" action="admin.php?do=editlevel" method="post">
+<div>Niveau à éditer : <select name="level">
+'.$options.'
+</select><br><br></div>
+<div style="text-align: center"><input type="submit" name="validation" value="Valider"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"></div>
+</form><br><br>';
+
+ display($page, 'Editer les niveaux');
+    
+}
+
+
+function editlevel() {// Edition des niveaux.
+
+global $controlrow, $page;
+    
+        if (isset($_POST['submit'])) {
+        
+        extract($_POST);
+        $errors = 0;
+        $errorlist = "";
+        if (trim($_POST['exp_1']) == "") { $errors++; $errorlist .= "- L'expérience de la classe 1 est exigée.<br>"; }
+        if (trim($_POST['hp_1']) == "") { $errors++; $errorlist .= "- Le HP de la classe 1 est exigé.<br>"; }
+        if (trim($_POST['mp_1']) == "") { $errors++; $errorlist .= "- Le MP de la classe 1 est exigé.<br>"; }
+        if (trim($_POST['tp_1']) == "") { $errors++; $errorlist .= "- Le TP de la classe 1 est exigé.<br>"; }
+        if (trim($_POST['strength_1']) == "") { $errors++; $errorlist .= "- La force de la classe 1 est exigée.<br>"; }
+        if (trim($_POST['dexterity_1']) == "") { $errors++; $errorlist .= "- La dextérité de la classe 1 est exigée.<br>"; }
+        if (trim($_POST['spells_1']) == "") { $errors++; $errorlist .= "- Le sort de la classe 1 est exigée.<br>"; }
+        if (!is_numeric($_POST['exp_1'])) { $errors++; $errorlist .= "- L'expérience de la classe 1 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['hp_1'])) { $errors++; $errorlist .= "- Le HP de la classe 1 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['mp_1'])) { $errors++; $errorlist .= "- Le MP de la classe 1 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['tp_1'])) { $errors++; $errorlist .= "- Le TP de la classe 1 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['strength_1'])) { $errors++; $errorlist .= "- La force de la classe 1 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['dexterity_1'])) { $errors++; $errorlist .= "- La dextérité de la classe 1 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['spells_1'])) { $errors++; $errorlist .= "- Le sort de la classe 1 doit être un nombre.<br>"; }
+
+       if (trim($_POST['exp_2']) == "") { $errors++; $errorlist .= "- L'expérience de la classe 2 est exigée.<br>"; }
+       if (trim($_POST['hp_2']) == "") { $errors++; $errorlist .= "- Le HP de la classe 2 est exigé.<br>"; }
+       if (trim($_POST['mp_2']) == "") { $errors++; $errorlist .= "- Le MP de la classe 2 est exigé.<br>"; }
+       if (trim($_POST['tp_2']) == "") { $errors++; $errorlist .= "- Le TP de la classe 2 est exigé.<br>"; }
+       if (trim($_POST['strength_2']) == "") { $errors++; $errorlist .= "- La force de la classe 2 est exigée.<br>"; }
+       if (trim($_POST['dexterity_2']) == "") { $errors++; $errorlist .= "- La dextérité de la classe 2 est exigée.<br>"; }
+       if (trim($_POST['spells_2']) == "") { $errors++; $errorlist .= "- Le sort de la classe 2 est exigé.<br>"; }
+        if (!is_numeric($_POST['exp_2'])) { $errors++; $errorlist .= "- L'expérience de la classe 2 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['hp_2'])) { $errors++; $errorlist .= "- Le HP de la classe 2 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['mp_2'])) { $errors++; $errorlist .= "- Le MP de la classe 2 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['tp_2'])) { $errors++; $errorlist .= "- Le TP de la classe 2 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['strength_2'])) { $errors++; $errorlist .= "- La force de la classe 2 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['dexterity_2'])) { $errors++; $errorlist .= "- La dextérité de la classe 2 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['spells_2'])) { $errors++; $errorlist .= "- Le sort de la classe 2 doit être un nombre.<br>"; }
+                
+       if (trim($_POST['exp_3']) == "") { $errors++; $errorlist .= "- L'expérience de la classe 3 est exigée.<br>"; }
+       if (trim($_POST['hp_3']) == "") { $errors++; $errorlist .= "- Le HP de la classe 3 est exigé.<br>"; }
+       if (trim($_POST['mp_3']) == "") { $errors++; $errorlist .= "- Le MP de la classe 3 est exigé.<br>"; }
+       if (trim($_POST['tp_3']) == "") { $errors++; $errorlist .= "- Le TP de la classe 3 est exigé.<br>"; }
+       if (trim($_POST['strength_3']) == "") { $errors++; $errorlist .= "- La force de la classe 3 est exigée.<br>"; }
+       if (trim($_POST['dexterity_3']) == "") { $errors++; $errorlist .= "- La dextérité de la classe 3 est exigée.<br>"; }
+       if (trim($_POST['spells_3']) == "") { $errors++; $errorlist .= "- Le sort de la classe 3 est exigé.<br>"; }
+        if (!is_numeric($_POST['exp_3'])) { $errors++; $errorlist .= "- L'expérience de la classe 3 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['hp_3'])) { $errors++; $errorlist .= "- Le HP de la classe 3 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['mp_3'])) { $errors++; $errorlist .= "- Le MP de la classe 3 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['tp_3'])) { $errors++; $errorlist .= "- Le TP de la classe 3 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['strength_3'])) { $errors++; $errorlist .= "- La force de la classe 3 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['dexterity_3'])) { $errors++; $errorlist .= "- La dextérité de la classe 3 doit être un nombre.<br>"; }
+        if (!is_numeric($_POST['spells_3'])) { $errors++; $errorlist .= "- Le sort de la classe 3 doit être un nombre.<br>"; }
+
+        if ($errors == 0) {
+	
+$update = doquery("UPDATE {{table}} SET
+        1_exp='$exp_1', 1_hp='$hp_1', 1_mp='$mp_1', 1_tp='$tp_1', 1_strength='$strength_1', 1_dexterity='$dexterity_1', 1_spells='$spells_1',
+        2_exp='$exp_2', 2_hp='$hp_2', 2_mp='$mp_2', 2_tp='$tp_2', 2_strength='$strength_2', 2_dexterity='$dexterity_2', 2_spells='$spells_2',
+        3_exp='$exp_3', 3_hp='$hp_3', 3_mp='$mp_3', 3_tp='$tp_3', 3_strength='$strength_3', 3_dexterity='$dexterity_3', 3_spells='$spells_3'
+        WHERE id='".$_POST['id']."' LIMIT 1", "levels");
+
+         $page .='Le niveau '.$_POST['id'].' a été mis à jour!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
+        } else {
+         $page .= 'La mise à jour n\'a pas pu se faire, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=levels">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
         }        
         
-    }   
+    }else{
+    $levelquery = doquery("SELECT * FROM {{table}} WHERE id='".$_POST['level']."' LIMIT 1", "levels");
+    $levelrow = mysql_fetch_array($levelquery);	
+  	
+    $class1name = $controlrow['class1name'];
+    $class2name = $controlrow['class2name'];
+    $class3name = $controlrow['class3name'];
+
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les niveaux:</b></span><br><br>
+
+<form enctype="multipart/form-data" action="" method="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">ID:</td><td> '.$levelrow['id'].'<input type="hidden" name="id" size="5"  value="'.$levelrow['id'].'"><br><br></td></tr>
+
+<tr><td colspan="2" class="rose2">&nbsp;</td></tr>
+
+<tr valign="top"><td style="width:110px">Experience du '.$class1name.':</td><td><input type="text" name="exp_1" size="10" maxlength="8" value="'.$levelrow['1_exp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">HP du '.$class1name.':</td><td><input type="text" name="hp_1" size="5" maxlength="5" value="'.$levelrow['1_hp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">MP du '.$class1name.':</td><td><input type="text" name="mp_1" size="5" maxlength="5" value="'.$levelrow['1_mp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">TP du '.$class1name.':</td><td><input type="text" name="tp_1" size="5" maxlength="5" value="'.$levelrow['1_tp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Force du '.$class1name.':</td><td><input type="text" name="strength_1" size="5" maxlength="5" value="'.$levelrow['1_strength'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Dextérité du '.$class1name.':</td><td><input type="text" name="dexterity_1" size="5" maxlength="5" value="'.$levelrow['1_dexterity'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Sorts du '.$class1name.':</td><td><input type="text" name="spells_1" size="5" maxlength="3" value="'.$levelrow['1_spells'].'"><br><br></td></tr>
+
+<tr><td colspan="2" class="rose2">&nbsp;</td></tr>
+
+<tr valign="top"><td style="width:110px">Expérience du '.$class2name.':</td><td><input type="text" name="exp_2" size="10" maxlength="8" value="'.$levelrow['2_exp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">HP du '.$class2name.':</td><td><input type="text" name="hp_2" size="5" maxlength="5" value="'.$levelrow['2_hp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">MP du '.$class2name.':</td><td><input type="text" name="mp_2" size="5" maxlength="5" value="'.$levelrow['2_mp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">TP du '.$class2name.':</td><td><input type="text" name="tp_2" size="5" maxlength="5" value="'.$levelrow['2_tp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Force du '.$class2name.':</td><td><input type="text" name="strength_2" size="5" maxlength="5" value="'.$levelrow['2_strength'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Dextérité du '.$class2name.':</td><td><input type="text" name="dexterity_2" size="5" maxlength="5" value="'.$levelrow['2_dexterity'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Sorts du '.$class2name.':</td><td><input type="text" name="spells_2" size="5" maxlength="3" value="'.$levelrow['2_spells'].'"><br><br></td></tr>
+
+<tr><td colspan="2" class="rose2">&nbsp;</td></tr>
+
+<tr valign="top"><td style="width:110px">Experience du '.$class3name.':</td><td><input type="text" name="exp_3" size="10" maxlength="8" value="'.$levelrow['3_exp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">HP du '.$class3name.':</td><td><input type="text" name="hp_3" size="5" maxlength="5" value="'.$levelrow['3_hp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">MP du '.$class3name.':</td><td><input type="text" name="mp_3" size="5" maxlength="5" value="'.$levelrow['3_mp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">TP du '.$class3name.':</td><td><input type="text" name="tp_3" size="5" maxlength="5" value="'.$levelrow['3_tp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Force du '.$class3name.':</td><td><input type="text" name="strength_3" size="5" maxlength="5" value="'.$levelrow['3_strength'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Dextérité du '.$class3name.':</td><td><input type="text" name="dexterity_3" size="5" maxlength="5" value="'.$levelrow['3_dexterity'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Sorts du '.$class3name.':</td><td><input type="text" name="spells_3" size="5" maxlength="3" value="'.$levelrow['3_spells'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:1px"></td><td>
+
+<div style="text-align: center"><input type="submit" name="submit" value="Valider"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"><input type="hidden" name="validation"></div></td></tr>
+</table>
+</form><br><br>';              
     
+ }
+    
+ display($page, 'Editer les niveaux');
+    
+}
+
+
+function users() {// Visualisation des utilisateurs.
+
+global $controlrow, $page;
+
+if( isset($_GET['page']) && is_numeric($_GET['page']) ){
+$nav = $_GET['page'];
+}else{
+$nav = 1;
+}  
+$pagination = 10;
+$limit_start = ($nav - 1) * $pagination;
+
+$usersquery = doquery("SELECT id, charname, charclass, level, currentaction, currentmp, currenttp, currenthp FROM {{table}} ORDER BY charname ASC LIMIT $limit_start, $pagination", "users");
+
+$page .='<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les utilisateurs:</b></span><br><br>Pour éditer un utilisateur, cliquez sur celui de votre choix, dans la liste ci-dessous.<br><br>';
+
+   while ($usersrow = mysql_fetch_array($usersquery)) {
+	 if ($usersrow['charclass'] == 1) {$class = $controlrow['class1name']; }
+	 if ($usersrow['charclass'] == 2) {$class = $controlrow['class2name']; }
+     if ($usersrow['charclass'] == 3) {$class = $controlrow['class3name']; }
+	 
+    $page .='<div class="bloc_rose"><a href="?do=edituser:'.$usersrow['id'].'"><b><span class="mauve2">'.$usersrow['charname'].'</span></b></a> - <i>Niv.: <span class="mauve1">'.$usersrow['level'].'</span> - Classe: <span class="mauve1">'.$class.'</span> - Actuellement: <span class="mauve1">'.$usersrow['currentaction'].'</span> - <span class="mauve2"><b>HP</b></span>: <span class="mauve1">'.$usersrow['currenthp'].'</span> - <span class="mauve1"><b>MP</b></span>: <span class="mauve1">'.$usersrow['currentmp'].'</span> - <span class="rouge1"><b>TP</b></span>: <span class="mauve1">'.$usersrow['currenttp'].'</span></i></div><br>';
+    }
+	
+if (mysql_num_rows($usersquery) == 0) { $page .= '<span class="alerte"> Il y a aucun utilisateur de trouvé!</span><br><br>'; }
+	
+mysql_free_result($usersquery);	
+
+$nb_total = doquery("SELECT COUNT(*) AS nb_total FROM {{table}} ORDER BY id", "users");
+$nb_total = mysql_fetch_array($nb_total);
+$nb_total = $nb_total['nb_total'];
+
+$nb_pages  = ceil($nb_total / $pagination);
+
+$page .='[ Page : ';
+
+for ($i = 1 ; $i <= $nb_pages ; $i++) {
+  if ($i == $nav ){
+$page .= '<b>'.$i.'</b> ';
+  }else{
+$page .='<a href="?do=users&amp;page='.$i.'">'.$i.'</a> ';}
+}
+$page .=' ]<br>';
+
+$page .='<br><a href="index.php">» retourner au jeu</a><br><br>';
+  
+  display($page, 'Editer les utilisateurs');
+
+}
+
+
+function edituser($id) {// Edition des utilisateurs.
+
+global $controlrow, $page;
+
+$usersquery = doquery("SELECT * FROM {{table}} WHERE id='$id' LIMIT 1", "users");
+$usersrow = mysql_fetch_array($usersquery);
+  
+  if (isset($_POST['submit'])) {
         
-$page = '
-<b><u>Editer les news</u></b><br /><br />
-<form method="post" action="admin.php?do=newsaccueil">
-<input type="text" name="titre" size="20" value="titre new"><br>
-Ecrivez l\'intégralité de la new ci dessous<br>
-<textarea name="content" rows="5" cols="50"></textarea><br>
-<input type="submit" name="submit" value="Valider">
-<input type="submit" name="reset" value="Annuler"><br><br>Vous pouvez ajouter une image dans la news en ajoutant ce code: <b>img src="url de l\'image"></b> . N\'oubliez pas le <b><</b> devant le img! <br><b>Attention :</b> Si vous avez actuellement 5 news sur la page d\'accueil, celle-ci effacera la plus ancienne.
-</form>
+        extract($_POST);
+        $errors = 0;
+        $errorlist = "";
+
+       if (trim($email) == "") { $errors++; $errorlist .= "- L'Email est exigé.<br>"; }
+       if (trim($verify) == "") { $errors++; $errorlist .= "- La vérification de l'email est exigée.<br>"; }
+       if (trim($charname) == "") { $errors++; $errorlist .= "- Le nom du personnage est exigé.<br>"; }
+       if (trim($authlevel) == "") { $errors++; $errorlist .= "- Le niveau d'accès est exigé.<br>"; }
+       if (trim($latitude) == "") { $errors++; $errorlist .= "- La latitude est exigée.<br>"; }
+       if (trim($longitude) == "") { $errors++; $errorlist .= "- La longitude est exigée.<br>"; }
+       if (trim($difficulty) == "") { $errors++; $errorlist .= "- La difficulté est exigée.<br>"; }
+       if (trim($charclass) == "") { $errors++; $errorlist .= "- La classe du personnagee est exigée.<br>"; }
+       if (trim($currentaction) == "") { $errors++; $errorlist .= "- L'action actuel est exigée.<br>"; }
+       if (trim($currentfight) == "") { $errors++; $errorlist .= "- Le combat en cours est exigé.<br>"; }
+        
+       if (trim($currentmonster) == "") { $errors++; $errorlist .= "- L'ID du monstre actuel est exigé.<br>"; }
+       if (trim($currentmonsterhp) == "") { $errors++; $errorlist .= "- Le HP du monstre actuel est exigé.<br>"; }
+       if (trim($currentmonstersleep) == "") { $errors++; $errorlist .= "- L'ID des sorts du monstre actuel est exigés.<br>"; }
+       if (trim($currentmonsterimmune) == "") { $errors++; $errorlist .= "- L'immunité du monstre actuel est exigée.<br>"; }
+       if (trim($currentuberdamage) == "") { $errors++; $errorlist .= "- Le dommage actuel d'Uber est exigé.<br>"; }
+       if (trim($currentuberdefense) == "") { $errors++; $errorlist .= "- La défense actuel d'Uber est exigé.<br>"; }
+       if (trim($currenthp) == "") { $errors++; $errorlist .= "- Le HP actuel est exigé.<br>"; }
+       if (trim($currentmp) == "") { $errors++; $errorlist .= "- Le MP actuel est exigé.<br>"; }
+       if (trim($currenttp) == "") { $errors++; $errorlist .= "- Le TP actuel est exigé.<br>"; }
+       if (trim($maxhp) == "") { $errors++; $errorlist .= "- Le HP max est exigé.<br>"; }
+
+       if (trim($maxmp) == "") { $errors++; $errorlist .= "- Le MP max est exigé.<br>"; }
+       if (trim($maxtp) == "") { $errors++; $errorlist .= "- Le TP max est exigé.<br>"; }
+       if (trim($level) == "") { $errors++; $errorlist .= "- Le niveau est exigé.<br>"; }
+       if (trim($gold) == "") { $errors++; $errorlist .= "- Les rubis sont exigés.<br>"; }
+       if (trim($experience) == "") { $errors++; $errorlist .= "- L'experience est exigée.<br>"; }
+       if (trim($goldbonus) == "") { $errors++; $errorlist .= "- Les rubis bonnus sont exigés.<br>"; }
+       if (trim($expbonus) == "") { $errors++; $errorlist .= "- L'experience Bonus est exigé.<br>"; }
+       if (trim($strength) == "") { $errors++; $errorlist .= "- La force est exigée.<br>"; }
+       if (trim($dexterity) == "") { $errors++; $errorlist .= "- La dextérité est exigée.<br>"; }
+       if (trim($attackpower) == "") { $errors++; $errorlist .= "- Le pouvoir d'attaque est exigé.<br>"; }
+
+       if (trim($defensepower) == "") { $errors++; $errorlist .= "- Le pouvoir de défense est exigé.<br>"; }
+       if (trim($weaponid) == "") { $weaponid == "Aucun"; }
+       if (trim($armorid) == "") { $armorid == "Aucun"; }
+       if (trim($shieldid) == "") { $shieldid == "Aucun"; }
+       if (trim($slot1id) == "") { $slot1id = 0; }
+       if (trim($slot2id) == "") { $slot2id = 0; }
+       if (trim($slot3id) == "") { $slot3id = 0; }
+       if (trim($weaponname) == "") { $weaponname = "Aucun"; }
+       if (trim($armorname) == "") { $armorname = "Aucun";; }
+       if (trim($shieldname) == "") { $shieldname = "Aucun";; }
+
+       if (trim($slot1name) == "") { $slot1name	= "Aucun"; }
+       if (trim($slot2name) == "") { $slot2name	= "Aucun";; }
+       if (trim($slot3name) == "") { $slot3name	= "Aucun";; }
+       if (trim($dropcode) == "") { $dropcode = 0; }
+       if (trim($spells) == "") { $spells = 0; }
+       if (trim($towns) == "") { $towns = 0; }
+
+        if (!is_numeric($authlevel)) { $errors++; $errorlist .= "- Le niveau d'accès doit être un nombre.<br>"; }
+        if (!is_numeric($latitude)) { $errors++; $errorlist .= "- La latitude doit être un nombre.<br>"; }
+        if (!is_numeric($longitude)) { $errors++; $errorlist .= "- La longitude doit être un nombre.<br>"; }
+        if (!is_numeric($difficulty)) { $errors++; $errorlist .= "- La difficultée doit être un nombre.<br>"; }
+        if (!is_numeric($charclass)) { $errors++; $errorlist .= "- La classe du personnage doit être un nombre.<br>"; }
+        if (!is_numeric($currentfight)) { $errors++; $errorlist .= "- Le combat en cours doit être un nombre.<br>"; }
+        if (!is_numeric($currentmonster)) { $errors++; $errorlist .= "- L'ID monstre actuel doit être un nombre.<br>"; }
+        if (!is_numeric($currentmonsterhp)) { $errors++; $errorlist .= "- Le HP du monstre actuel doit être un nombre.<br>"; }
+        if (!is_numeric($currentmonstersleep)) { $errors++; $errorlist .= "- L'ID des sorts du monstre actuel doit être un nombre.<br>"; }
+        
+        if (!is_numeric($currentmonsterimmune)) { $errors++; $errorlist .= "- L'immunité du monstre actuel doit être nombre.<br>"; }
+        if (!is_numeric($currentuberdamage)) { $errors++; $errorlist .= "- Le dommage actuel d'Uber doit être un nombre.<br>"; }
+        if (!is_numeric($currentuberdefense)) { $errors++; $errorlist .= "- La défense actuel d'Uber doit être un nombre.<br>"; }
+        if (!is_numeric($currenthp)) { $errors++; $errorlist .= "- Le HP actuel doit être un nombre.<br>"; }
+        if (!is_numeric($currentmp)) { $errors++; $errorlist .= "- Le MP actuel doit être un nombre.<br>"; }
+        if (!is_numeric($currenttp)) { $errors++; $errorlist .= "- Le TP actuel doit être un nombre.<br>"; }
+        if (!is_numeric($maxhp)) { $errors++; $errorlist .= "- Le HP Max doit àtre un nombre.<br>"; }
+        if (!is_numeric($maxmp)) { $errors++; $errorlist .= "- Le MP Max doit àtre un nombre.<br>"; }
+        if (!is_numeric($maxtp)) { $errors++; $errorlist .= "- Le TP Max doit àtre un nombre.<br>"; }
+        if (!is_numeric($level)) { $errors++; $errorlist .= "- Le niveau doit être un nombre.<br>"; }
+        
+        if (!is_numeric($gold)) { $errors++; $errorlist .= "- Les rubis doivent êtres des nombres.<br>"; }
+        if (!is_numeric($experience)) { $errors++; $errorlist .= "- L'expérience doit être un nombre.<br>"; }
+        if (!is_numeric($goldbonus)) { $errors++; $errorlist .= "- Les rubis bonnus doivent êtres des nombres.<br>"; }
+        if (!is_numeric($expbonus)) { $errors++; $errorlist .= "- L'expérience bonnus doit être un nombre.<br>"; }
+        if (!is_numeric($strength)) { $errors++; $errorlist .= "- La force doit être un nombre.<br>"; }
+        if (!is_numeric($dexterity)) { $errors++; $errorlist .= "- La dextérité doit être un nombre.<br>"; }
+        if (!is_numeric($attackpower)) { $errors++; $errorlist .= "- Le pouvoir d'attaque doit être un nombre.<br>"; }
+        if (!is_numeric($defensepower)) { $errors++; $errorlist .= "- Le pouvoir de défense doit être un nombre.<br>"; }
+        if (!is_numeric($weaponid)) { $errors++; $errorlist .= "- L'ID de la l'arme doit être un nombre.<br>"; }
+        if (!is_numeric($armorid)) { $errors++; $errorlist .= "- L'ID de l'armure doit être un nombre.<br>"; }
+        
+        if (!is_numeric($shieldid)) { $errors++; $errorlist .= "- L'ID de la protection doit tre un nombre.<br>"; }
+        if (!is_numeric($slot1id)) { $errors++; $errorlist .= "- L'ID de la fente 1 doit être un nombre.<br>"; }
+        if (!is_numeric($slot2id)) { $errors++; $errorlist .= "- L'ID de la fente 2 doit être un nombre.<br>"; }
+        if (!is_numeric($slot3id)) { $errors++; $errorlist .= "- L'ID de la fente 3 doit être un nombre.<br>"; }
+        if (!is_numeric($dropcode)) { $errors++; $errorlist .= "Drop Code must be a number.<br />"; }
+
+        if ($errors == 0) { 
+
+$update = doquery("UPDATE {{table}} SET
+email='".addslashes($email)."', verify='$verify', charname='".addslashes($charname)."', authlevel='$authlevel', latitude='$latitude',
+longitude='$longitude', difficulty='$difficulty', charclass='$charclass', currentaction='$currentaction', currentfight='$currentfight',
+currentmonster='$currentmonster', currentmonsterhp='$currentmonsterhp', currentmonstersleep='$currentmonstersleep', currentmonsterimmune='$currentmonsterimmune', currentuberdamage='$currentuberdamage',
+currentuberdefense='$currentuberdefense', currenthp='$currenthp', currentmp='$currentmp', currenttp='$currenttp', maxhp='$maxhp',
+maxmp='$maxmp', maxtp='$maxtp', level='$level', gold='$gold', experience='$experience',
+goldbonus='$goldbonus', expbonus='$expbonus', strength='$strength', dexterity='$dexterity', attackpower='$attackpower',
+defensepower='$defensepower', weaponid='$weaponid', armorid='$armorid', shieldid='$shieldid', slot1id='$slot1id',
+slot2id='$slot2id', slot3id='$slot3id', weaponname='".addslashes($weaponname)."', armorname='".addslashes($armorname)."', shieldname='".addslashes($shieldname)."',
+slot1name='".addslashes($slot1name)."', slot2name='".addslashes($slot2name)."', slot3name='".addslashes($slot3name)."', dropcode='$dropcode', spells='$spells',
+towns='$towns' WHERE id='".$usersrow['id']."' LIMIT 1", "users");
+			
+         $page .='L\'utilisateur '.addslashes($charname).' a été mis à jour!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
+        } else {
+         $page .= 'La mise à jour n\'a pas pu se faire, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=edituser:'.$id.'">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
+        }           
+    }else{   
+    
+    $diff1name = $controlrow['diff1name'];
+    $diff2name = $controlrow['diff2name'];
+    $diff3name = $controlrow['diff3name'];
+    $class1name = $controlrow['class1name'];
+    $class2name = $controlrow['class2name'];
+    $class3name = $controlrow['class3name'];
+	
+	if ($usersrow['authlevel'] == 0) { $usersrow['auth0select'] = 'selected="selected" '; } else { $usersrow['auth0select'] = ""; }
+    if ($usersrow['authlevel'] == 1) { $usersrow['auth1select'] = 'selected="selected" '; } else { $usersrow['auth1select'] = ""; }
+    if ($usersrow['authlevel'] == 2) { $usersrow['auth2select'] = 'selected="selected" '; } else { $usersrow['auth2select'] = ""; }
+    if ($usersrow['charclass'] == 1) { $usersrow['class1select'] = 'selected="selected" '; } else { $usersrow['class1select'] = ""; }
+    if ($usersrow['charclass'] == 2) { $usersrow['class2select'] = 'selected="selected" '; } else { $usersrow['class2select'] = ""; }
+    if ($usersrow['charclass'] == 3) { $usersrow['class3select'] = 'selected="selected" '; } else { $usersrow['class3select'] = ""; }
+    if ($usersrow['difficulty'] == 1) { $usersrow['diff1select'] = 'selected="selected" '; } else { $usersrow['diff1select'] = ""; }
+    if ($usersrow['difficulty'] == 2) { $usersrow['diff2select'] = 'selected="selected" '; } else { $usersrow['diff2select'] = ""; }
+    if ($usersrow['difficulty'] == 3) { $usersrow['diff3select'] = 'selected="selected" '; } else { $usersrow['diff3select'] = ""; }
+
+
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les utilisateurs:</b></span><br><br>
+
+<form enctype="multipart/form-data" action="" method="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">Joueur numéro:</td><td>'.$usersrow['id'].'<br><br></td></tr>
+<tr valign="top"><td style="width:110px">ID:</td><td>'.$usersrow['username'].'<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Avatar:</td><td><img src="images/avatars/jeu/'.$usersrow['avatar'].'.gif" alt="'.$usersrow['charname'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Email:</td><td><input type="text" name="email" size="30" maxlength="100" value="'.$usersrow['email'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Verifié:</td><td><input type="text" name="verify" size="30" maxlength="8" value="'.$usersrow['verify'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Pseudo:</td><td><input type="text" name="charname" size="30" maxlength="30" value="'.$usersrow['charname'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Date d\'inscription:</td><td>'.$usersrow['regdate'].'<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Dernière fois en ligne:</td><td>'.$usersrow['onlinetime'].'<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Niv. d\'accès:</td><td><select name="authlevel"><option value="0" '.$usersrow['auth0select'].'>Simple joueur</option><option value="1" '.$usersrow['auth1select'].'>Administrateur</option><option value="2" '.$usersrow['auth2select'].'>Bloqué</option></select><br>Sélectionnez "bloqué" pour empêcher un utilisateur d\'accèder au jeu.<br><br></td></tr>
+
+<tr valign="top"><td colspan="2" class="rose2">&nbsp;</td></tr>
+
+<tr valign="top"><td style="width:110px">Latitude:</td><td><input type="text" name="latitude" size="5" maxlength="6" value="'.$usersrow['latitude'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Longitude:</td><td><input type="text" name="longitude" size="5" maxlength="6" value="'.$usersrow['longitude'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Difficulté:</td><td><select name="difficulty"><option value="1" '.$usersrow['diff1select'].'>'.$diff1name.'</option><option value="2" '.$usersrow['diff2select'].'>'.$diff2name.'</option><option value="3" '.$usersrow['diff3select'].'>'.$diff3name.'</option></select><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Classe du personnage:</td><td><select name="charclass"><option value="1" '.$usersrow['class1select'].'>'.$class1name.'</option><option value="2" '.$usersrow['class2select'].'>'.$class2name.'</option><option value="3" '.$usersrow['class3select'].'>'.$class3name.'</option></select><br><br></td></tr>
+
+<tr valign="top"><td colspan="2" class="rose2">&nbsp;</td></tr>
+
+<tr valign="top"><td style="width:110px">Action en cours:</td><td><input type="text" name="currentaction" size="30" maxlength="30" value="'.$usersrow['currentaction'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Combat en cours:</td><td><input type="text" name="currentfight" size="5" maxlength="4" value="'.$usersrow['currentfight'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">ID du monstre:</td><td><input type="text" name="currentmonster" size="5" maxlength="6" value="'.$usersrow['currentmonster'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">HP du monstre:</td><td><input type="text" name="currentmonsterhp" size="5" maxlength="6" value="'.$usersrow['currentmonsterhp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">ID des sorts du monstre:</td><td><input type="text" name="currentmonsterimmune" size="5" maxlength="3" value="'.$usersrow['currentmonsterimmune'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Immunité du monstre:</td><td><input type="text" name="currentmonstersleep" size="5" maxlength="3" value="'.$usersrow['currentmonstersleep'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Dommage actuel d\'Uber:</td><td><input type="text" name="currentuberdamage" size="5" maxlength="3" value="'.$usersrow['currentuberdamage'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Défense actuel d\'Uber:</td><td><input type="text" name="currentuberdefense" size="5" maxlength="3" value="'.$usersrow['currentuberdefense'].'"><br><br></td></tr>
+
+<tr valign="top"><td colspan="2" class="rose2">&nbsp;</td></tr>
+
+<tr valign="top"><td style="width:110px">HP actuel:</td><td><input type="text" name="currenthp" size="5" maxlength="6" value="'.$usersrow['currenthp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">MP actuel:</td><td><input type="text" name="currentmp" size="5" maxlength="6" value="'.$usersrow['currentmp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">TP actuel:</td><td><input type="text" name="currenttp" size="5" maxlength="6" value="'.$usersrow['currenttp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Max HP:</td><td><input type="text" name="maxhp" size="5" maxlength="6" value="'.$usersrow['maxhp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Max MP:</td><td><input type="text" name="maxmp" size="5" maxlength="6" value="'.$usersrow['maxmp'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Max TP:</td><td><input type="text" name="maxtp" size="5" maxlength="6" value="'.$usersrow['maxtp'].'"><br><br></td></tr>
+
+<tr valign="top"><td colspan="2" class="rose2">&nbsp;</td></tr>
+
+<tr valign="top"><td style="width:110px">Niveau:</td><td><input type="text" name="level" size="5" maxlength="5" value="'.$usersrow['level'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Rubis:</td><td><input type="text" name="gold" size="10" maxlength="8" value="'.$usersrow['gold'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Experience:</td><td><input type="text" name="experience" size="10" maxlength="8" value="'.$usersrow['experience'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Bonnus rubis:</td><td><input type="text" name="goldbonus" size="5" maxlength="5" value="'.$usersrow['goldbonus'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Bonnus experience :</td><td><input type="text" name="expbonus" size="5" maxlength="5" value="'.$usersrow['expbonus'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Force:</td><td><input type="text" name="strength" size="5" maxlength="5" value="'.$usersrow['strength'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Dextérité:</td><td><input type="text" name="dexterity" size="5" maxlength="5" value="'.$usersrow['dexterity'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Pouvoir d\'attaque:</td><td><input type="text" name="attackpower" size="5" maxlength="5" value="'.$usersrow['attackpower'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Pouvoir de défense:</td><td><input type="text" name="defensepower" size="5" maxlength="5" value="'.$usersrow['defensepower'].'"><br><br></td></tr>
+
+<tr valign="top"><td colspan="2" class="rose2">&nbsp;</td></tr>
+
+<tr valign="top"><td style="width:110px">ID de l\'arme:</td><td><input type="text" name="weaponid" size="5" maxlength="5" value="'.$usersrow['weaponid'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">ID del\'armure:</td><td><input type="text" name="armorid" size="5" maxlength="5" value="'.$usersrow['armorid'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">ID de la protection:</td><td><input type="text" name="shieldid" size="5" maxlength="5" value="'.$usersrow['shieldid'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">ID de la fente 1:</td><td><input type="text" name="slot1id" size="5" maxlength="5" value="'.$usersrow['slot1id'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">ID de la fente 2:</td><td><input type="text" name="slot2id" size="5" maxlength="5" value="'.$usersrow['slot2id'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">ID de la fente 3:</td><td><input type="text" name="slot3id" size="5" maxlength="5" value="'.$usersrow['slot3id'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom de l\'arme:</td><td><input type="text" name="weaponname" size="30" maxlength="30" value="'.$usersrow['weaponname'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom de l\'armure:</td><td><input type="text" name="armorname" size="30" maxlength="30" value="'.$usersrow['armorname'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom de la protec.:</td><td><input type="text" name="shieldname" size="30" maxlength="30" value="'.$usersrow['shieldname'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom de la fente 1:</td><td><input type="text" name="slot1name" size="30" maxlength="30" value="'.$usersrow['slot1name'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom de la fente 2:</td><td><input type="text" name="slot2name" size="30" maxlength="30" value="'.$usersrow['slot2name'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Nom de la fente 3:</td><td><input type="text" name="slot3name" size="30" maxlength="30" value="'.$usersrow['slot3name'].'"><br><br></td></tr>
+
+<tr valign="top"><td colspan="2" class="rose2">&nbsp;</td></tr>
+
+<tr valign="top"><td style="width:110px">Code drop:</td><td><input type="text" name="dropcode" size="5" maxlength="8" value="'.$usersrow['dropcode'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Sorts:</td><td><input type="text" name="spells" size="50" maxlength="50" value="'.$usersrow['spells'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Ville:</td><td><input type="text" name="towns" size="50" maxlength="50" value="'.$usersrow['towns'].'"><br><br><br><br></td></tr>
+<tr valign="top"><td style="width:1px"></td><td>
+
+<div style="text-align: center"><input type="submit" name="submit" value="Valider"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"></div></td></tr>
+</table>
+</form><br><br>';
+ 
+ }
+    
+display($page, 'Editer les utilisateurs');
+    
+}
+
+
+function addnews() {// Edition des news.
+
+global $controlrow, $page;
+
+    if (isset($_POST['submit'])) {
+        
+        extract($_POST);
+        $errors = 0;
+        $errorlist = "";
+		if (trim($titre) == "") { $errors++; $errorlist .= "- Le titre de la news exigé.<br>"; }
+        if (trim($resume) == "") { $errors++; $errorlist .= "- Le résumé de la news est exigé.<br>"; }
+         
+        if ($errors == 0) { 
+           $update = doquery("INSERT INTO {{table}} SET id='',date='".time()."',title='$titre', resume='$resume', content='$message'", "news");
+		   $page .='La news vient d\'être posté!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
+        } else {
+           $page .= 'La news n\'a pas pu être posté, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=addnews">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
+        }            
+    }else{
+
+if(isset($_POST['previsualiser'])) {
+	$texte = new texte();
+	$bbcode  = $texte->ms_format($_POST['message']);
+	  
+    }else{
+	$bbcode = $_POST['message'] = $_POST['resume'] = $_POST['titre'] = null;
+	}	
+          
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer une news:</b></span><br><br>
+
+<form enctype="multipart/form-data" action="" method="post" name="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">Titre:</td><td><input type="text" name="titre" size="40" value="'.$_POST['titre'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Résumé:</td><td><textarea name="resume" rows="5" cols="54">'.$_POST['resume'].'</textarea><br><br></td></tr>
+<tr valign="top"><td style="width:110px">BBcode:</td><td><select class="taille2" onchange="bbfontstyle(\'[color=\' + this.form.couleur.options[this.form.couleur.selectedIndex].value + \']\', \'[/color]\');this.selectedIndex=0;" name="couleur"><option style="color: black;" value="#000000">Couleur</option><option style="color: red;" value="#FF0000">Rouge</option><option style="color: orange;" value="#FFA500">Orange</option><option style="color: yellow;" value="#FFFF00">Jaune</option><option style="color: green;" value="#008000">Vert</option><option style="color: violet;" value="#EE82EE">Violet</option><option style="color: blue;" value="#0000FF">Bleu</option><option style="color: indigo;" value="#4B0082">Indigo</option></select> <select onchange="bbfontstyle(\'[size=\' + this.form.taille.options[this.form.taille.selectedIndex].value + \']\', \'[/size]\')" name="taille"> <option value="9">Très petit</option> <option value="10">Petit</option> <option value=3 selected>Normal</option> <option value="14">Grand</option> <option value="20">Très grand</option></select><input onclick="bbstyle(0)" type="button" value="G" class="taille2" style="font-weight: bold;"> <input onclick="bbstyle(2)" type="button" value="I" class="taille2" style="font-style: italic;"> <input onclick="bbstyle(4)" type="button" value="U" class="taille2" style="text-decoration: underline;"> <input onclick="bbstyle(6)" type="button" value="Url" class="taille2"> <input onclick="bbstyle(8)" type="button" value="Image" class="taille2"></td></tr>
+<tr valign="top"><td style="width:110px"></td><td style="height:4px"></td></tr>
+<tr valign="top"><td style="width:110px"></td><td><a href="javascript:emoticon(\':D\')"><img src="images/jeu/blog/smileys/sourire.gif" style="border:0"  alt=""></a> <a href="javascript:emoticon(\';\)\')"><img src="images/jeu/blog/smileys/clin.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':\(\')"><img src="images/jeu/blog/smileys/triste.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':surpris:\')"><img src="images/jeu/blog/smileys/yeuxrond.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':o\')"><img src="images/jeu/blog/smileys/etonne.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':confus:\')"><img src="images/jeu/blog/smileys/confus.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':lol:\')"><img src="images/jeu/blog/smileys/lol.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':fire:\')"><img src="images/jeu/blog/smileys/flame.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':splif:\')"><img src="images/jeu/blog/smileys/petard.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':bigsmile:\')"><img src="images/jeu/blog/smileys/green.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':x\')"><img src="images/jeu/blog/smileys/mad.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':roll:\')"><img src="images/jeu/blog/smileys/rolleyes.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':bigcry:\')"><img src="images/jeu/blog/smileys/crying.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':colere:\')"><img src="images/jeu/blog/smileys/colere.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':P\')"><img src="images/jeu/blog/smileys/razz.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\'8\)\')"><img src="images/jeu/blog/smileys/lunettes.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':\)\')"><img src="images/jeu/blog/smileys/sourire2.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':oops:\')"><img src="images/jeu/blog/smileys/redface.gif" style="border:0" alt=""></a><br><br></td></tr>
+<tr valign="top"><td style="width:110px">News complète:</td><td><textarea name="message" rows="5" cols="54">'.$_POST['message'].'</textarea><br><br></td></tr>
+<tr valign="top"><td style="width:110px"></td><td><input type="submit" name="submit" value="Envoyer"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"> <input type="submit" name="previsualiser" value="Prévisualiser"><br><br></td></tr>
+<tr valign="top"><td style="width:110px"></td><td style="width:340px">'.$bbcode.'</td></tr>
+</table>
+</form><br><br>
 ';
-    
-    admindisplay($page, "Editer les news");
-    
+} 
+   
+display($page, 'Editer les news');
+
 } 
 
-function carte() {
+
+function addpoll() {// Edition du sondage.
+
+global $page;
+
+    if (isset($_POST['submit'])) {
+        
+        extract($_POST);
+        $errors = 0;
+        $errorlist = "";
+        if (trim($question) == "") { $errors++; $errorlist .= "- La question est obligatoire.<br>"; }
+	    if (trim($answer1) == "") { $errors++; $errorlist .= "- La réponse 1  est obligatoire.<br>"; }
+		if (trim($answer2) == "") { $errors++; $errorlist .= "- La réponse 2 est obligatoire.<br>"; }
+		if (preg_match("/[\^*+<>#]/", $question)==1) { $errors++; $errorlist .= "- La question doit être écrit en caractères alphanumériques.<br>"; }
+        if (preg_match("/[\^*+<>#]/", $answer1)==1) { $errors++; $errorlist .= "- La réponse 1 doit être écrit en caractères alphanumériques.<br>"; }
+        if (preg_match("/[\^*+<>#]/", $answer2)==1) { $errors++; $errorlist .= "- La réponse 2 doit être écrit en caractères alphanumériques.<br>"; }
+		if (preg_match("/[\^*+<>#]/", $answer3)==1) { $errors++; $errorlist .= "- La réponse 3 doit être écrit en caractères alphanumériques.<br>"; }
+		if (preg_match("/[\^*+<>#]/", $answer4)==1) { $errors++; $errorlist .= "- La réponse 4 doit être écrit en caractères alphanumériques.<br>"; }
+
+		
+        if ($errors == 0) { 
+           $update = doquery("INSERT INTO {{table}} SET id='',question='".addslashes($question)."',answer1='".addslashes($answer1)."',answer2='".addslashes($answer2)."',answer3='".addslashes($answer3)."',answer4='".addslashes($answer4)."'", "poll");
+           $page .='Le sondage vient d\'être posté!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
+        } else {
+           $page .= 'Le sondage n\'a pas pu être posté, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=addpoll">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
+        }            
+    }else{   
+             
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Ajouter un sondage:</b></span><br><br>
+
+<form enctype="multipart/form-data" action="" method="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">Question :</td><td><input type="text" name="question" size="20"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Réponse 1 :</td><td><input type="text" name="answer1" size="20" maxlength="18"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Réponse 2 :</td><td><input type="text" name="answer2" size="20" maxlength="18"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Réponse 3 :</td><td><input type="text" name="answer3" size="20" maxlength="18"> ( si nécéssaire)<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Réponse 4 :</td><td><input type="text" name="answer4" size="20" maxlength="18"> ( si nécéssaire)<br><br></td></tr>
+<tr valign="top"><td style="width:1px"></td><td>
+
+<div style="text-align: center"><input type="submit" name="submit" value="Créer"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"></div></td></tr>
+</table>
+</form><br><br>';
+}  
+     
+display($page, 'Editer le sondage');
+
+}
+
+
+function addnewsletter() {// Edition des newsletters.
+
+global $controlrow, $page, $userrow;
+  
+    if (isset($_POST['submit'])) {
+   
+        extract($_POST);
+        $errors = 0;
+        $errorlist = "";
+		if (trim($expediteur) == "") { $errors++; $errorlist .= "- L'adresse de l'expéditeur est exigée.<br>"; }
+		if (! is_email($expediteur)) { $errors++; $errorlist .= "- L'adresse de l'expéditeur est invalide.<br>"; }
+        if (trim($sujet) == "") { $errors++; $errorlist .= "- Le sujet du mail est exigé.<br>"; }
+	    if (trim($message) == "") { $errors++; $errorlist .= "- Le message du mail est exigé.<br>"; }
+        if (preg_match('/[<>\[\]]/',  $message)==1 && $format == "plain"){ $errors++; $errorlist .= "- Le message est incorrect au format texte.<br>"; }
+ 
+        
+        if ($errors == 0) {
+		if ($format == 'html') { 
+	
+		 $texte = new texte();
+		
+		 $body= $texte->ms_format($_POST['message']).'<br><br>A bientot sur <a href='.$controlrow['gameurl'].'>'.$controlrow['gamename'].'</a>'; 
+		
+		}else {
+		
+		 $body = $_POST['message']."\n \n A bientot sur ".$controlrow['gamename']."(".$controlrow['gameurl'].")"; 
+		
+		}
+   $usersquery = doquery("SELECT * FROM {{table}} WHERE verify=1", "users");  
+     
+   while ($usersrow=mysql_fetch_array($usersquery)){
+	 
+       $to = $usersrow['email'];		   
+       $title = $controlrow['gamename'].' : '.$_POST['sujet']; 
+       $head  = 'De:'.$_POST['expediteur'].'\n'; 
+       $head .= "MIME-version: 1.0\n"; 
+       $head .= 'Content-type: text/'.$format.'; charset= iso-8859-1\n';
+       $body;
+	   
+	   mail($to,$title,$body,$head); 
+   }
+           $page .='La newsletter vient d\'être posté!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
+        } else {
+           $page .= 'La newsletter n\'a pas pu être posté, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=addnewsletter">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
+        }            
+    }else{
+	
+	if(isset($_POST['previsualiser'])&& $_POST['format'] == 'html') {
+	$texte = new texte();
+	$bbcode  = $texte->ms_format($_POST['message']);
+	  
+    }elseif(isset($_POST['previsualiser'])&& $_POST['format'] == 'plain') {
+	
+	$bbcode = nl2br($_POST['message']);
+	
+	}else{
+	$bbcode = $_POST['message'] = $_POST['sujet'] = null;
+	}
+	
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer une newsletter:</b></span><br><br>
+
+<form enctype="multipart/form-data" action="" method="post" name="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">Expéditeur:</td><td><input type="text" name="expediteur" size="20" value="'.$userrow['email'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Sujet du mail:</td><td><input type="text" name="sujet" size="40" value="'.$_POST['sujet'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Format:</td><td><input type="radio" value="plain" name="format">Texte <span class="alerte">(pas de BBcode)</span> <input type="radio" value="html" name="format" checked>Html<br><br></td></tr>
+<tr valign="top"><td style="width:110px">BBcode:</td><td><select class="taille2" onchange="bbfontstyle(\'[color=\' + this.form.couleur.options[this.form.couleur.selectedIndex].value + \']\', \'[/color]\');this.selectedIndex=0;" name="couleur"><option style="color: black;" value="#000000">Couleur</option><option style="color: red;" value="#FF0000">Rouge</option><option style="color: orange;" value="#FFA500">Orange</option><option style="color: yellow;" value="#FFFF00">Jaune</option><option style="color: green;" value="#008000">Vert</option><option style="color: violet;" value="#EE82EE">Violet</option><option style="color: blue;" value="#0000FF">Bleu</option><option style="color: indigo;" value="#4B0082">Indigo</option></select> <select onchange="bbfontstyle(\'[size=\' + this.form.taille.options[this.form.taille.selectedIndex].value + \']\', \'[/size]\')" name="taille"> <option value="9">Très petit</option> <option value="10">Petit</option> <option value=3 selected>Normal</option> <option value="14">Grand</option> <option value="20">Très grand</option></select><input onclick="bbstyle(0)" type="button" value="G" class="taille2" style="font-weight: bold;"> <input onclick="bbstyle(2)" type="button" value="I" class="taille2" style="font-style: italic;"> <input onclick="bbstyle(4)" type="button" value="U" class="taille2" style="text-decoration: underline;"> <input onclick="bbstyle(6)" type="button" value="Url" class="taille2"> <input onclick="bbstyle(8)" type="button" value="Image" class="taille2"></td></tr>
+<tr valign="top"><td style="width:110px"></td><td style="height:4px"></td></tr>
+<tr valign="top"><td style="width:110px"></td><td><a href="javascript:emoticon(\':D\')"><img src="images/jeu/blog/smileys/sourire.gif" style="border:0"  alt=""></a> <a href="javascript:emoticon(\';\)\')"><img src="images/jeu/blog/smileys/clin.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':\(\')"><img src="images/jeu/blog/smileys/triste.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':surpris:\')"><img src="images/jeu/blog/smileys/yeuxrond.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':o\')"><img src="images/jeu/blog/smileys/etonne.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':confus:\')"><img src="images/jeu/blog/smileys/confus.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':lol:\')"><img src="images/jeu/blog/smileys/lol.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':fire:\')"><img src="images/jeu/blog/smileys/flame.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':splif:\')"><img src="images/jeu/blog/smileys/petard.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':bigsmile:\')"><img src="images/jeu/blog/smileys/green.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':x\')"><img src="images/jeu/blog/smileys/mad.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':roll:\')"><img src="images/jeu/blog/smileys/rolleyes.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':bigcry:\')"><img src="images/jeu/blog/smileys/crying.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':colere:\')"><img src="images/jeu/blog/smileys/colere.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':P\')"><img src="images/jeu/blog/smileys/razz.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\'8\)\')"><img src="images/jeu/blog/smileys/lunettes.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':\)\')"><img src="images/jeu/blog/smileys/sourire2.gif" style="border:0" alt=""></a> <a href="javascript:emoticon(\':oops:\')"><img src="images/jeu/blog/smileys/redface.gif" style="border:0" alt=""></a><br><br></td></tr>
+<tr valign="top"><td style="width:110px">Message :</td><td><textarea name="message" rows="5" cols="54">'.$_POST['message'].'</textarea><br><br></td></tr>
+<tr valign="top"><td style="width:110px"></td><td><input type="submit" name="submit" value="Envoyer"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"> <input type="submit" name="previsualiser" value="Prévisualiser"><br><br></td></tr>
+<tr valign="top"><td style="width:110px"></td><td style="width:340px">'.$bbcode.'</td></tr>
+</table>
+</form><br><br>
+';
+}
+
+display($page, 'Editer les newsletters');
+
+}
+
+
+function editpartner() {// Edition des partenaires.
+
+global $page;
     
     if (isset($_POST['submit'])) {
         
         extract($_POST);
         $errors = 0;
         $errorlist = "";
-	    if ($longitude1 == "") { $errors++; $errorlist .= "- La latitude est exigée sur le premier champ.<br />"; }
-        if ($latitude1 == "") { $errors++; $errorlist .= "- La longitude est exigée sur le premier champ.<br />"; }
-		if (preg_match("/[^0-9_\-]/", $longitude1)==1) { $errors++; $errorlist .= "- La longitude doit être écrit en valeurs numériques.<br />"; }
-        if (preg_match("/[<>\[\]]/", $latitude1)==1) { $errors++; $errorlist .= "- La latitude doit être écrit en valeurs numériques.<br />"; }
+		if (trim($name) == "") { $errors++; $errorlist .= "- Le nom du site est exigé.<br>"; }
+        if (trim($url) == "") { $errors++; $errorlist .= "- L'adresse du site est exigée.<br>"; }
+		if (trim($description) == "") { $errors++; $errorlist .= "- La description du site est exigée.<br>"; }
+		if (preg_match("/[\^*+<>?#]/", $name)==1) { $errors++; $errorlist .= "- Le nom du site doit être écrit en caractères alphanumériques.<br>"; }
+        if (preg_match("/[\^*+<>#]/", $url)==1) { $errors++; $errorlist .= "- L'adresse du site est incorrecte.<br>"; }
+        if (preg_match("/[\^*+<>?#\"']/", $description)==1) { $errors++; $errorlist .= "- La description du site doit être écrit en caractères alphanumériques.<br>"; }
+        if (preg_match("/[\^*+<>#\"']/", $button)==1) { $errors++; $errorlist .= "- L'adresse du bouton du site est incorrect.<br>"; }
 
         if ($errors == 0) { 
-		
-		 if ($longitude1 && $latitude1 !=''){
-		 $update1 = doquery("INSERT INTO {{table}} SET id='',nom='$nom1', lati='$latitude1', longi='$longitude1', passable='$passable1'", "sol");
-         }
-		 if ($longitude2 && $latitude2 !=''){
-		 $update2 = doquery("INSERT INTO {{table}} SET id='',nom='$nom2', lati='$latitude2', longi='$longitude2', passable='$passable2'", "sol");
-         }
-		 if ($longitude3 && $latitude3 !=''){
-		 $update3 = doquery("INSERT INTO {{table}} SET id='',nom='$nom3', lati='$latitude3', longi='$longitude3', passable='$passable3'", "sol");
-         }
-		 if ($longitude4 && $latitude4 !=''){
-		 $update4 = doquery("INSERT INTO {{table}} SET id='',nom='$nom4', lati='$latitude4', longi='$longitude4', passable='$passable4'", "sol");
-         }
-		  if ($longitude5 && $latitude5 !=''){
-		 $update5 = doquery("INSERT INTO {{table}} SET id='',nom='$nom5', lati='$latitude5', longi='$longitude5', passable='$passable5'", "sol");
-         }
-		  if ($longitude6 && $latitude6 !=''){
-		 $update6 = doquery("INSERT INTO {{table}} SET id='',nom='$nom6', lati='$latitude6', longi='$longitude6', passable='$passable6'", "sol");
-         }
-		  if ($longitude7 && $latitude7 !=''){
-		 $update7 = doquery("INSERT INTO {{table}} SET id='',nom='$nom7', lati='$latitude7', longi='$longitude7', passable='$passable7'", "sol");
-         }
-		  if ($longitude8 && $latitude8 !=''){
-		 $update8 = doquery("INSERT INTO {{table}} SET id='',nom='$nom8', lati='$latitude8', longi='$longitude8', passable='$passable8'", "sol");
-         }
-		  if ($longitude9 && $latitude9 !=''){
-		 $update9 = doquery("INSERT INTO {{table}} SET id='',nom='$nom9', lati='$latitude9', longi='$longitude9', passable='$passable9'", "sol");
-         }
-		  if ($longitude10 && $latitude10 !=''){
-		 $update10 = doquery("INSERT INTO {{table}} SET id='',nom='$nom10', lati='$latitude10', longi='$longitude10', passable='$passable10'", "sol");
-         }
-		 
-		 admindisplay('La carte a été modifiée avec succès!<br /><br />Maintenant vous pouvez:<br /><br /><a href="admin.php?do=carte">» retourner pour éditer la map</a><br /><a href="index.php">» retourner au jeu</a>','Editer la carte');
+           $update = doquery("INSERT INTO {{table}} SET id='',name='$name', description='$description', url='$url', button='$button'", "partners");
+           $page .='Le partenaire '.$name.' vient d\'être ajouté!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
         } else {
-            admindisplay('<b>Erreurs:</b><br /><br /><span class="alerte">'.$errorlist.'</span><br /><a href="admin.php?do=carte">Veuillez retourner et essayer encore</a>.', 'Editer la carte');
+           $page .= 'Le partenaire n\'a pas pu être ajouté, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=editpartner">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
         }          
-    }   
+    }else{  
           
-$page = '
-<b><u><span class="mauve1">Editer la carte</span></u></b><br /><br /><u>Légende:</u> Arbre = <img src="images/carte/arbre.gif" width="15" height="15"> Fleur = <img src="images/carte/fleur.jpg" width="15" height="15"> Fleur2 =  <img src="images/carte/fleur1.jpg" width="15" height="15"> Rocher =  <img src="images/carte/rocher.jpg" width="15" height="15"> Eau =  <img src="images/carte/mer.jpg" width="15" height="15"><br /><br />
-<form method="post" action="admin.php?do=carte">
-<table width="586" border="0" cellspacing="0" cellpadding="0">
-<tr valign="top"><td style="width:500px">Type: <select name="nom1"><option value="arbre">Arbre</option><option value="fleur">Fleur</option><option value="rocher">Rocher</option><option value="mer">Eau</option><option value="quete">Quete</option></select> Longitude: <input type="text" name="longitude1" size="4" maxlength="3"> Latitude: <input type="text" name="latitude1" size="4" maxlength="3"> Passable: <select name="passable1"><option value="1">Oui</option><option value="0">Non</option></select></td></tr>
-<tr valign="top"><td style="width:500px">Type: <select name="nom2"><option value="arbre">Arbre</option><option value="fleur">Fleur</option><option value="rocher">Rocher</option><option value="mer">Eau</option><option value="quete">Quete</option></select> Longitude: <input type="text" name="longitude2" size="4" maxlength="3"> Latitude: <input type="text" name="latitude2" size="4" maxlength="3"> Passable: <select name="passable2"><option value="1">Oui</option><option value="0">Non</option></select></td></tr>
-<tr valign="top"><td style="width:500px">Type: <select name="nom3"><option value="arbre">Arbre</option><option value="fleur">Fleur</option><option value="rocher">Rocher</option><option value="mer">Eau</option><option value="quete">Quete</option></select> Longitude: <input type="text" name="longitude3" size="4" maxlength="3"> Latitude: <input type="text" name="latitude3" size="4" maxlength="3"> Passable: <select name="passable3"><option value="1">Oui</option><option value="0">Non</option></select></td></tr>
-<tr valign="top"><td style="width:500px">Type: <select name="nom4"><option value="arbre">Arbre</option><option value="fleur">Fleur</option><option value="rocher">Rocher</option><option value="mer">Eau</option><option value="quete">Quete</option></select> Longitude: <input type="text" name="longitude4" size="4" maxlength="3"> Latitude: <input type="text" name="latitude4" size="4" maxlength="3"> Passable: <select name="passable4"><option value="1">Oui</option><option value="0">Non</option></select></td></tr>
-<tr valign="top"><td style="width:500px">Type: <select name="nom5"><option value="arbre">Arbre</option><option value="fleur">Fleur</option><option value="rocher">Rocher</option><option value="mer">Eau</option><option value="quete">Quete</option></select> Longitude: <input type="text" name="longitude5" size="4" maxlength="3"> Latitude: <input type="text" name="latitude5" size="4" maxlength="3"> Passable: <select name="passable5"><option value="1">Oui</option><option value="0">Non</option></select></td></tr>
-<tr valign="top"><td style="width:500px">Type: <select name="nom6"><option value="arbre">Arbre</option><option value="fleur">Fleur</option><option value="rocher">Rocher</option><option value="mer">Eau</option><option value="quete">Quete</option></select> Longitude: <input type="text" name="longitude6" size="4" maxlength="3"> Latitude: <input type="text" name="latitude6" size="4" maxlength="3"> Passable: <select name="passable6"><option value="1">Oui</option><option value="0">Non</option></select></td></tr>
-<tr valign="top"><td style="width:500px">Type: <select name="nom7"><option value="arbre">Arbre</option><option value="fleur">Fleur</option><option value="rocher">Rocher</option><option value="mer">Eau</option><option value="quete">Quete</option></select> Longitude: <input type="text" name="longitude7" size="4" maxlength="3"> Latitude: <input type="text" name="latitude7" size="4" maxlength="3"> Passable: <select name="passable7"><option value="1">Oui</option><option value="0">Non</option></select></td></tr>
-<tr valign="top"><td style="width:500px">Type: <select name="nom8"><option value="arbre">Arbre</option><option value="fleur">Fleur</option><option value="rocher">Rocher</option><option value="mer">Eau</option><option value="quete">Quete</option></select> Longitude: <input type="text" name="longitude8" size="4" maxlength="3"> Latitude: <input type="text" name="latitude8" size="4" maxlength="3"> Passable: <select name="passable8"><option value="1">Oui</option><option value="0">Non</option></select></td></tr>
-<tr valign="top"><td style="width:500px">Type: <select name="nom9"><option value="arbre">Arbre</option><option value="fleur">Fleur</option><option value="rocher">Rocher</option><option value="mer">Eau</option><option value="quete">Quete</option></select> Longitude: <input type="text" name="longitude9" size="4" maxlength="3"> Latitude: <input type="text" name="latitude9" size="4" maxlength="3"> Passable: <select name="passable9"><option value="1">Oui</option><option value="0">Non</option></select></td></tr>
-<tr valign="top"><td style="width:500px">Type: <select name="nom10"><option value="arbre">Arbre</option><option value="fleur">Fleur</option><option value="rocher">Rocher</option><option value="mer">Eau</option><option value="quete">Quete</option></select> Longitude: <input type="text" name="longitude10" size="4" maxlength="3"> Latitude: <input type="text" name="latitude10" size="4" maxlength="3"> Passable: <select name="passable10"><option value="1">Oui</option><option value="0">Non</option></select></td></tr>
-<tr valign="top"><td style="width:500px"><br /><br /><input type="submit" name="submit" value="Valider" /> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"/</td></tr>
-</table><br />
-<b><u><span class="mauve1">Visualiser la map</span></u></b><br />Selectionner la zone de votre choix (le temps de chargement varie de 10 à 30 secondes en moyenne).
-<br /><br /><img src="images/carte/quadrillage.jpg" usemap="#carte" border="0">
-<map name="carte">
-  <area shape="rect" coords="126,128,148,149" href="#" onClick="window.open(\'?do=visu_map&latitude=-254&longitude=-256\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="101,127,124,148" href="#" onClick="window.open(\'?do=visu_map&latitude=-254&longitude=128\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="77,127,98,149" href="#" onClick="window.open(\'?do=visu_map&latitude=-254&longitude=44\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="51,124,73,149" href="#" onClick="window.open(\'?do=visu_map&latitude=-254&longitude=-40\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="28,126,48,147" href="#" onClick="window.open(\'?do=visu_map&latitude=-254&longitude=-124\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="2,129,22,147" href="#" onClick="window.open(\'?do=visu_map&latitude=-254&longitude=-208\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="128,102,149,124" href="#" onClick="window.open(\'?do=visu_map&latitude=-128&longitude=254\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="102,102,124,123" href="#" onClick="window.open(\'?do=visu_map&latitude=-128&longitude=128\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="77,102,99,124" href="#" onClick="window.open(\'?do=visu_map&latitude=-128&longitude=44\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="52,100,71,121" href="#" onClick="window.open(\'?do=visu_map&latitude=-128&longitude=-40\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="27,101,49,125" href="#" onClick="window.open(\'?do=visu_map&latitude=-128&longitude=-124\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="2,102,23,127" href="#" onClick="window.open(\'?do=visu_map&latitude=-128&longitude=-208\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="128,78,147,99" href="#" onClick="window.open(\'?do=visu_map&latitude=-44&longitude=254\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="102,76,124,99" href="#" onClick="window.open(\'?do=visu_map&latitude=-44&longitude=128\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="78,76,99,99" href="#" onClick="window.open(\'?do=visu_map&latitude=-44&longitude=44\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="53,77,73,97" href="#" onClick="window.open(\'?do=visu_map&latitude=-44&longitude=-40\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="28,76,49,97" href="#" onClick="window.open(\'?do=visu_map&latitude=-44&longitude=-124\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="3,76,24,99" href="#" onClick="window.open(\'?do=visu_map&latitude=-44&longitude=-208\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="127,53,140,74" href="#" onClick="window.open(\'?do=visu_map&latitude=40&longitude=254\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="105,53,123,74" href="#" onClick="window.open(\'?do=visu_map&latitude=40&longitude=128\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="80,52,98,75" href="#" onClick="window.open(\'?do=visu_map&latitude=40&longitude=44\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="53,51,74,73" href="#" onClick="window.open(\'?do=visu_map&latitude=40&longitude=-40\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="28,52,46,73" href="#" onClick="window.open(\'?do=visu_map&latitude=40&longitude=-124\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="2,55,23,73" href="#" onClick="window.open(\'?do=visu_map&latitude=40&longitude=-208\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="130,29,149,50" href="#" onClick="window.open(\'?do=visu_map&latitude=124&longitude=254\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="102,27,124,51" href="#" onClick="window.open(\'?do=visu_map&latitude=124&longitude=128\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="78,26,96,49" href="#" onClick="window.open(\'?do=visu_map&latitude=124&longitude=44\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="54,27,73,49" href="#" onClick="window.open(\'?do=visu_map&latitude=124&longitude=-40\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="26,24,50,49" href="#" onClick="window.open(\'?do=visu_map&latitude=124&longitude=-124\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="1,25,22,49" href="#" onClick="window.open(\'?do=visu_map&latitude=124&longitude=-208\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="128,3,149,23" href="#" onClick="window.open(\'?do=visu_map&latitude=208&longitude=254\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="104,3,124,23" href="#" onClick="window.open(\'?do=visu_map&latitude=208&longitude=128\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="78,1,97,22" href="#" onClick="window.open(\'?do=visu_map&latitude=208&longitude=44\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="53,3,74,21" href="#" onClick="window.open(\'?do=visu_map&latitude=208&longitude=-40\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="27,1,46,21" href="#" onClick="window.open(\'?do=visu_map&latitude=208&longitude=-124\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=0, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  <area shape="rect" coords="0,0,21,23" href="#" onClick="window.open(\'?do=visu_map&latitude=208&longitude=-208\',\'_blank\',\'toolbar=0, location=0, directories=0, status=0, scrollbars=1, resizable=, copyhistory=0, menuBar=0, width=890, height=890\');return(false)">
-  </map>
-</form>
-';
-    
-    admindisplay($page, 'Editeur de map');
-    
-}
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer les partenaires:</b></span><br><br>
 
-function visu_map() { // Visualisation de la map
+<form enctype="multipart/form-data" action="" method="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">Nom du site:</td><td><input type="text" name="name" size="20"><br><br></td></tr>
+<tr valign="top"><td style="width:110px">URL du site:</td><td><input type="text" name="url" size="20"> avec (http://)<br><br></td></tr>
+<tr valign="top"><td style="width:110px">URL du bouton:</td><td><input type="text" name="button" size="20"> taille: 81x31<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Description:</td><td><textarea name="description" rows="5" cols="54"></textarea><br><br></td></tr>
+<tr valign="top"><td style="width:1px"></td><td>
 
-if(isset($_GET['longitude'])&&($_GET['latitude'])){
-
-$latmax = $_GET['latitude'] + 42;
-$longmax = $_GET['longitude'] + 42;
-$latmin = $_GET['latitude'] - 42;
-$longmin = $_GET['longitude'] - 42;
-
-$latitude = $latmax;
-$page = '<body>
-<div id="dek" style="z-index: 500; visibility: hidden; position: absolute"></div><script language="javascript" type="text/javascript" src="infobulle.js"></script>
-<style type="text/css">
-table {
-  color: black;
-  font: 10px verdana;
-}</style>';
-
-$page .= '<table width="63" height="63" border="0" cellspacing="0" cellpadding="0" style="background-image:url(images/carte/herbe.jpg)" align="center">';
-$page .= '<tr><td align="center" valign="middle">';
-$page .= '<table cellspacing="0" cellpadding="0">';
-$latitude = $latmax;
-$page .= '<table cellspacing="0" cellpadding="0" bordercolor="#FFFFFF" border="1">';
-while ($latitude >= $latmin ) {
-$page .= '<tr bordercolor="#000000">';
-$longitude = $longmin;
-while ($longitude <= $longmax) {
-
-//infos map
-$query2 = doquery("SELECT nom FROM {{table}} WHERE lati='$latitude' AND longi='$longitude' LIMIT 1", "sol");
-$fetcht = mysql_fetch_array($query2);
-$map = $fetcht['nom'];
-
-// infos Villes
-$query4 = doquery("SELECT name FROM {{table}} WHERE latitude='$latitude' AND longitude='$longitude' LIMIT 1", "towns");
-$fetchx = mysql_fetch_array($query4);
-$villes = $fetchx['name'];
-
-if($villes !=''){
-$page .= '<td><a onMouseOver="popup(\'Longitude: '.$longitude.'; Latitude: '.$latitude.'<br> Ville: '.$villes.'\',\'#FFFFF9\')" onMouseOut=kill() ;><img src="images/carte/ville.jpg" width="9" height="9"></a></td>'; }
-elseif($map =='arbre'){
-$page .= '<td><a onMouseOver="popup(\'Longitude: '.$longitude.'; Latitude: '.$latitude.'\',\'#FFFFF9\')" onMouseOut=kill() ;><img src="images/carte/arbre.gif" width="9" height="9"></a></td>'; }
-elseif($map =='mer'){
-$page .= '<td><a onMouseOver="popup(\'Longitude: '.$longitude.'; Latitude: '.$latitude.'\',\'#FFFFF9\')" onMouseOut=kill() ;><img src="images/carte/mer.jpg" width="9" height="9"></a></td>'; }
-else{
-$page .= '<td><a onMouseOver="popup(\'Longitude: '.$longitude.'; Latitude: '.$latitude.'\',\'#FFFFF9\')" onMouseOut=kill() ;><img src="images/leftnav_log/click-guide.gif" width="9" height="9"></a></td>';
-}
-$longitude++;
-}
-$page .= '</tr>';
-$latitude--;
-}
-$page .= '</table>';
-
-$page .= '</td>
-  </tr>
-</table></body>';
-$page .='<input type=button name=bouton value="Recharger la page" onclick=\'parent.location="javascript:location.reload()"\'> Cliquez sur le bouton pour recharger la page après vos modifications';
-
-}else{
-
-$page .='Erreur de manipulation';}
-
-echo $page;
-
+<div style="text-align: center"><input type="submit" name="submit" value="Ajouter"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"></div></td></tr>
+</table>
+</form><br><br>';
 } 
+    
+display($page, 'Editer les partenaires');
+  
+} 
+
+
+function editcopyright() {// Edition du copyright.
+
+global $controlrow, $page;
+    
+    if (isset($_POST['submit'])) {
+        
+        extract($_POST);
+        $errors = 0;
+        $errorlist = "";
+		if (trim($copyright) == "") { $errors++; $errorlist .= "- Le copyright est obligatoire.<br>"; }
+        if (preg_match('/[<>\[\]]/', $copyright)==1) { $errors++; $errorlist .= "- Le copyright doit être écrit en caractères alphanumériques.<br>"; }
+
+       if ($errors == 0) { 
+           $update = doquery("UPDATE {{table}} SET copyright='".addslashes($copyright)."'", "control");
+           $page .='Le copyright vient d\'être modifié!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
+        } else {
+           $page .= 'Le copyright n\'a pas pu être modifié, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=editcopyright">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
+        }             
+    }else{  
+ 
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer le copyright:</b></span><br><br>
+
+<form enctype="multipart/form-data" action="" method="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">Nouveau: </td><td><input type="text" name="copyright" size="40" value=""><br>Merci de laisser la mention "© RPGillusion.net", pour le bien de la communauté Open Source(GNU/ GPL).<br><br></td></tr>
+<tr valign="top"><td style="width:110px">Ancien: </td><td><input type="text" name="ancien" size="40" value="'.$controlrow['copyright'].'"><br><br></td></tr>
+<tr valign="top"><td style="width:1px"></td><td>
+
+<div style="text-align: center"><input type="submit" name="submit" value="Valider"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"></div></td></tr>
+</table>
+</form><br><br>';
+}
+
+display($page, 'Editer le copyright');
+
+}  
+
+
+function editbabblebox() {// Edition du t'chat (vider).    
+
+global $page;
+
+  if (isset($_POST['submit'])) {
+        
+	$delete = doquery("DELETE FROM {{table}}", "babble");
+           
+    $page .='Le t\'chat vient d\'être vidé!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
+         
+    }else{ 
+	
+$page .= '
+	
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer le copyright:</b></span><br><br>Pour vider le t\'chat il vous suffit de cliquer sur le bouton nommé "vider".<br><br><span class="alerte">Note:</span> Cette action est irréversible.<br><br>
+
+<form enctype="multipart/form-data" action="" method="post">
+<div style="text-align: center"><input type="submit" name="submit" value="Vider"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"></div>
+</form><br><br> 
+';
+}	
+
+display($page, 'Editer le t\'chat (vider)');
+
+}
+
+
+function editmenuusers() {// Edition du contenu du menu users.
+
+global $page;
+
+$menuquery = doquery("SELECT * FROM {{table}} WHERE id='1' LIMIT 1", "menu_users");
+$menurow = mysql_fetch_array($menuquery);
+
+    if (isset($_POST['submit'])) {
+        
+        extract($_POST);
+        $errors = 0;
+        $errorlist = "";
+		if (trim($content) == "") { $errors++; $errorlist .= "- Le contenu du menu est exigé.<br>"; }
+         
+        if ($errors == 0) { 
+           $update = doquery("UPDATE {{table}} SET content='$content' WHERE id='1' LIMIT 1", "menu_users");
+		   $page .='Le contenu vient d\'être posté!<br><br>Maintenant vous pouvez:<br><br><a href="index.php">» retourner au jeu</a><br>» Sélectionner une autre rubrique à administrer';  
+        } else {
+           $page .= 'La contenu n\'a pas pu être posté, car les erreur(s) suivante(s) se sont produite(s):<br><br><span class="alerte">'.$errorlist.'</span><br><br>Maintenant vous pouvez:<br><br><a href="?do=editmenuusers">» retourner et réessayer</a><br><a href="index.php">» retourner au jeu</a>'; 
+        }            
+    }else{	
+          
+$page .= '
+<img src="images/jeu/puce4.gif" alt=""> <span class="mauve2"><b>Editer le menu users:</b></span><br><br>Vous pouvez ajouter dans le menu "Users" des publicités ou d\'autres contenus Un minimum de connaissance en language HTML est requis en cas d\'ajout d\'une publucité.<br><br>
+
+<form enctype="multipart/form-data" action="" method="post" name="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">Le contenu:</td><td><textarea name="content" rows="5" cols="54">'.$menurow['content'].'</textarea><br><br></td></tr>
+<tr valign="top"><td style="width:110px"></td><td><input type="submit" name="submit" value="Envoyer"> <input type="button" value="Retour" OnClick="javascript:location=\'index.php\'"><br><br></td></tr>
+</table>
+</form><br><br>
+';
+} 
+   
+display($page, 'Editer le menu users');
+
+}
+
+
 ?>

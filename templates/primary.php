@@ -1,132 +1,39 @@
 <?php
-
-ob_start();
-include 'blocs.php';
-$blocs = ob_get_contents();
- ob_end_clean();
- ob_start();
-
-$template = <<<THEVERYENDOFYOU
+$template = '
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
 <head>
-<title>{{title}}</title>
-
+<title>{{rpgname}} - {{title}}</title>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-<meta name='Description' content='RPG illusion est un rpg entierement gratuit en php. Téléchargez le pour votre site. Free php online www.rpgillusion.net'>
-<meta name='Keywords' content='free, php, free hosting, rpg, free game, rpg online, online, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, i, ii, iii, iv, v, vi, vii, viii, ix, x, xi, xii, tactics, lengend, mmorg, mystic, free mmorpg, ff1, ff2, ff3, ff4, ff5, ff6, ff7, ff8, ff9, ff10, ff11, ff12, film, the, spirits, within, creatures, esprit, square, squaresoft, actualite, news, nouvelles, solution, soluce, walthrough, guides, faq, astuces, tips, cheats, codes, action, replay, game, shark, quetes, armes, chocobos, objets, discussion, forum, ezboard, avatars, chat, irc, script, livre, or, downloads, fonds, ecran, bureau, wallpapers, skins, winamp, icq, musique, midi, spc, nobuo, uematsu, en, francais, francaises, fr, triple, triad, online, en, ligne, runic, police, font, icones, ecrand, veille, sreensavers, images, videos, str, lecteur, fans, fanarts, fanfics, annuaire, portail, liens, taquin, histoire, historique, phenomene, japon, creation, genese, paroles, lyrics, goodies, pc, playstation, psx, psx2, sony, nintendo, super, famicom, jeux, video, games, top, topjv, classement, sites'>
-<meta name="Author" content='Mick'>
-<meta name='Identifier-URL' content='http://www.rpgillusion.net'>
-<meta name='Reply-to' content='webmaster@rpgillusion.net'>
-<meta name='revisit-after' content='1 days'>
-<meta name='robots' content='index, follow'>
-<meta name='Generator' content='Wordpad'>
-<meta name='Copyright' content='RPGillusion'>
-<LINK REL="shortcut icon" HREF="../images/ico.ico">
-
-<style type="text/css">
-body {
-  background-image: url(images/background.jpg);
-  color: black;
-  font: 11px verdana;
-}
-table {
-  border-style: none;
-  padding: 0px;
-  font: 11px verdana;
-}
-
-td {
-  border-style: none;
-  padding: 3px;
-  vertical-align: top;
-}
-td.top {
-  width: 889px;
-  border-bottom: solid 1px black;
-  border-style:dotted;
-  border-left: solid 0px white;
-  border-top: solid 0px white;
-  border-right: solid 0px black; 
-}
-td.left {
-  width: 180px;
-  border-right: solid 1px black; 
-  border-style:dotted;
-  border-left: solid 0px white;
- border-top: solid 0px white;
- border-bottom: solid 0px white;
-}
-td.right {
-  width: 205px;
-   border-left: solid 1px black; 
-   border-style:dotted;
-  border-right: solid 0px white;
-  border-top: solid 0px white;
-  border-bottom: solid 0px white;
-}
-a {
-    color: #663300;
-    text-decoration: none;
-    font-weight: bold;
-}
-a:hover {
-    color: #330000;
-}
-.small {
-  font: 10px verdana;
-}
-.highlight {
-  color: red;
-}
-.light {
-  color: #999999;
-}
-.title {
-  padding: 1px;
-  margin: 0px;
-}
-.location {
-  border: solid 1px white;
-  padding: 5px;
-  margin: 0px;
-}
-.copyright {
-  border: solid 1px black;
-  background-color: #eeeeee;
-  font: 10px verdana;
-}
-
-</style>
- 
-
-
-<script>
-
-function opencharpopup(){
-var popurl="index.php?do=showchar"
-winpops=window.open(popurl,"","width=210,height=500,scrollbars")
-}
-function openmappopup(){
-var popurl="index.php?do=showmap"
-winpops=window.open(popurl,"","width=520,height=520,scrollbars")
-}
-</script>
-
- 
+{{styles}}
 </head>
-<body> <center>
-<table cellspacing="0" width="75%"><tr>
-<td class="top" colspan="3">
-  <table width="75%"><tr><td><img src="images/logo.gif" alt="{{dkgamename}}" title="{{dkgamename}}" border="0"/></td><td style="text-align:right; vertical-align:middle;">{{topnav}}</td></tr></table>
-</td>
-</tr><tr>
-<td class="left">{{leftnav}}</td>
-<td class="middle">{{content}}</td>
-<td class="right">{{rightnav}}</td>
-</tr>
-</table><br />
-<table class="classement " width="90%"><tr>
-<td width="25%" align="center" valign="middle">$blocs</table>
-</center></body>
+<body {{load_classement}}>
+
+<div id="conteneur">
+
+<div id="header"> </div>
+
+<div id="flash"><script type="text/javascript">Flash("images/principal/entete8.swf", "767", "46", "", "banniere", "$mavariable" );</script></div>
+
+<div>
+
+<div id="centre">
+
+<div id="menu">
+  {{leftnav}}{{leftnavlog}}
+  </div>
+  <div id="contenu">
+  {{content}}<br><br>
+  </div>
+  </div>
+
+  </div>
+  <div id="pied">
+  <span class="taille1">{{copyright}}</span>&nbsp;&nbsp;
+  </div>
+  </div>
+</body>
 </html>
-THEVERYENDOFYOU;
+';
 ?>

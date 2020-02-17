@@ -1,11 +1,13 @@
 <?php
-$template = <<<THEVERYENDOFYOU
-<form action="users.php?do=lostpassword" method="post">
-<table width="80%">
-<tr><td colspan="2">Si vous avez perdu votre PW, écrivez votre adresse email ci-dessous. Un nouveau vous sera envoyé.</td></tr>
-<tr><td width="20%">Adresse email:</td><td><input type="text" name="email" size="30" maxlength="100" /></td></tr>
-<tr><td colspan="2"><input type="submit" name="submit" value="Valider" /> <input type="reset" name="reset" value="Annuler" /></td></tr>
+$template ='
+<img src="images/login/actions/pw_oublie.jpg" width="580" height="82" alt="Password oublié"><br><br>
+Si vous avez perdu votre Password (PW), il vous sufffit de nous indiquer votre adresse e-mail utilisé lors de votre inscription. Nous vous enverrons imédiatement un nouveau PW par e-mail.<br><br><br>
+<form enctype="multipart/form-data" action="" method="post">
+<table width="580" border="0" cellspacing="0" cellpadding="0">
+<tr valign="top"><td style="width:110px">Adresse email:</td><td><input type="text" name="email" size="30" maxlength="50"><br><br></td></tr>
+<tr valign="top"><td style="width:1px"></td><td>
+<div style="text-align: center"><input type="submit" name="submit" value="Valider"> <input type="button" value="Retour" OnClick="javascript:location=\'login.php?do=login\'"></div></td></tr>
 </table>
 </form>
-THEVERYENDOFYOU;
+';
 ?>

@@ -1,4 +1,4 @@
-<?php // explore.php :: Déplacements et actions en cours "Actuellement".
+<?php // explore.php :: Exploration, combats....
 
 function move() {
     
@@ -20,15 +20,6 @@ function move() {
         travelto($townrow["id"], false);
         die();
     }
-	
-	$homequery = doquery("SELECT id FROM {{table}} WHERE latitude='$latitude' AND longitude='$longitude' LIMIT 1", "maison");
-    if (mysql_num_rows($homequery) > 0) {
-        $homerow = mysql_fetch_array($homequery);
-        include('home.php');
-        travelto($homerow["id"], false);
-        die();
-    }
-
     
     $chancetofight = rand(1,5);
     if ($chancetofight == 1) { 
@@ -38,9 +29,8 @@ function move() {
     }
 
     
-    $updatequery = doquery("UPDATE {{table}} SET $action latitude='$latitude', longitude='$longitude', dropcode='0' WHERE id='".$userrow["id"]."' LIMIT 1", "users");
+    $updatequery = doquery("UPDATE {{table}} SET onlinetime=NOW(), $action latitude='$latitude', longitude='$longitude', dropcode='0' WHERE id='".$userrow["id"]."' LIMIT 1", "users");
     header("Location: index.php");
-
     
 }
 
