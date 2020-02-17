@@ -9,7 +9,7 @@ $mpstat = $userrow[currentmp] / $userrow[maxmp] * 100;
 $tpstat = $userrow[currenttp] / $userrow[maxtp] * 100;
 
 $latmax = $userrow['latitude'] + 4;
-$longmax = $userrow['longitude'] + 8;
+$longmax = $userrow['longitude'] + 7;
 $latmin = $userrow['latitude'] - 5;
 $longmin = $userrow['longitude'] - 8;
 
@@ -72,7 +72,7 @@ $sol = $fetcht['nom'];
 // infos Maisons
 $query3 = doquery("SELECT name FROM {{table}} WHERE latitude='$latitude' AND longitude='$longitude' LIMIT 1", "maison");
 $fetchh = mysql_fetch_array($query3);
-$maison	= $fetchh['charname'];
+$maison	= $fetchh['name'];
 
 // infos Villes
 $query4 = doquery("SELECT name FROM {{table}} WHERE latitude='$latitude' AND longitude='$longitude' LIMIT 1", "towns");
@@ -83,7 +83,7 @@ if($villes !='')
 {echo "<td><img src=\"images/carte/ville.jpg\" width=\"29\" height=\"29\" border=\"0\" title=\"".$villes."\"></td>"; }
 else {
 if($persorow['avatar']!='') {
-echo "<td style=\"background-image:url(images/avatar/carte/".$persorow['avatar'].".gif)\" width=\"29\" height=\"29\" title=\"".$persorow['charname']." (".$longitude." , ".$latitude.") est ici\"></td>";
+echo "<td><img src=\"images/avatar/carte/".$persorow['avatar'].".gif\" width=\"29\" height=\"29\" border=\"0\" title=\"".$persorow['charname']." (".$longitude." , ".$latitude.") est ici\"></td>";
 } else {
 if($maison !='') 
 {echo "<td><img src=\"images/carte/maison.jpg\" width=\"29\" height=\"29\" border=\"0\" title=\"Maison de ".$maison."\"></td>"; }
@@ -91,7 +91,7 @@ else {
 if($sol !='') {
 echo "<td style=\"background-image:url(images/carte/".$sol.".gif)\" width=\"29\" height=\"29\"></td>"; }
 else {
-echo "<td></td>\n";
+echo "<td width=\"29\" height=\"29\"></td>\n";
 }
 }
 }

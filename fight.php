@@ -465,9 +465,9 @@ function drop() {
             $slotrow = mysql_fetch_array($slotquery);
             
             $old1 = explode(",",$slotrow["attribute1"]);
-            if ($slotrow["attribute2"] != "X") { $old2 = explode(",",$slotrow["attribute2"]); } else { $old2 = array(0=>"maxhp",1=>0); }
+            if ($slotrow["attribute2"] != "Aucun") { $old2 = explode(",",$slotrow["attribute2"]); } else { $old2 = array(0=>"maxhp",1=>0); }
             $new1 = explode(",",$droprow["attribute1"]);
-            if ($droprow["attribute2"] != "X") { $new2 = explode(",",$droprow["attribute2"]); } else { $new2 = array(0=>"maxhp",1=>0); }
+            if ($droprow["attribute2"] != "Aucun") { $new2 = explode(",",$droprow["attribute2"]); } else { $new2 = array(0=>"maxhp",1=>0); }
             
             $userrow[$old1[0]] -= $old1[1];
             $userrow[$old2[0]] -= $old2[1];
@@ -493,7 +493,7 @@ function drop() {
         } else {
             
             $new1 = explode(",",$droprow["attribute1"]);
-            if ($droprow["attribute2"] != "X") { $new2 = explode(",",$droprow["attribute2"]); } else { $new2 = array(0=>"maxhp",1=>0); }
+            if ($droprow["attribute2"] != "Aucun") { $new2 = explode(",",$droprow["attribute2"]); } else { $new2 = array(0=>"maxhp",1=>0); }
             
             $userrow[$new1[0]] += $new1[1];
             $userrow[$new2[0]] += $new2[1];
@@ -528,7 +528,7 @@ function drop() {
     $page .= $attributearray[$attribute1[0]];
     if ($attribute1[1] > 0) { $page .= " +" . $attribute1[1] . "<br />"; } else { $page .= $attribute1[1] . "<br />"; }
     
-    if ($droprow["attribute2"] != "X") { 
+    if ($droprow["attribute2"] != "Aucun") { 
         $attribute2 = explode(",",$droprow["attribute2"]);
         $page .= $attributearray[$attribute2[0]];
         if ($attribute2[1] > 0) { $page .= " +" . $attribute2[1] . "<br />"; } else { $page .= $attribute2[1] . "<br />"; }
