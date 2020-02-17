@@ -58,6 +58,11 @@ a:hover {
   background-color: #eeeeee;
   font: 10px verdana;
 }
+#map {
+	width: 501px;
+	height: 501px;
+	background-image: url(images/map.gif);
+}
 </style>
 </head>
 <body><center>

@@ -1,11 +1,14 @@
-<?php // config.php :: Low-level app/database variables.
+<?php // config.php :: Infos pour l'installation du script à remplir.
 
 $dbsettings = Array(
-        "server"        => "localhost",     // MySQL server name. (Default: localhost)
-        "user"          => "",              // MySQL username.
-        "pass"          => "",              // MySQL password.
-        "name"          => "",              // MySQL database name.
-        "prefix"        => "dk",            // Prefix for table names. (Default: dk)
-        "secretword"    => "");             // Secret word used when hashing information for cookies.
+        "server"        => "localhost",     // Nom du serveur MySQL. (Default: localhost)
+        "user"          => "root",              // Nom de votre login MySQL.
+        "pass"          => "",              // Nom de votre password MySQL.
+        "name"          => "test",              // Nom de votre base MySQL.
+        "secretword"    => "rpg",             // Mot secret utilisé lors de la mise a jour des cookies.       
+
+// Pour éviter les problèmes MYSQL ne changez pas le préfixe
+		"prefix"        => "rpg");            // Prefixe des tables MySQL
+
 
 ?>

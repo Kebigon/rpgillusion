@@ -1,0 +1,116 @@
+!-----------------------------------------------!
+!                                               !     
+!         RPG ILLUSION VERSION 1.2C             !
+!                                               !  
+!-----------------------------------------------!
+Site officiel: http://rpgillusion.franceserv.com
+Forum officiel: http://rpgillusion.franceserv.com/forum/
+
+
+!-----------------------------------------------!
+!     INSTALLATION DE RPG ILLUSION 1.2c         !
+!-----------------------------------------------!
+Commencez par ouvrir et configurer les fichier config.php avec
+votre bloc note habituel ou autre editeur de texte.
+
+Puis envoyer le répertoire de rpg illusion sur votre serveur
+
+Enfin rendez vous à la page install.php et suivez les étapes.
+
+!-----------------------------------------------!
+!       OPEN SOURCE RPG ILLUSION                !
+!-----------------------------------------------!
+
+Ce programme est distribué sous license Open source.
+Vous pouvez le modifier librement.
+
+ATTENTION:
+
+Le copyright concerne les images du jeu (appartenant à Nexon - Maplestory). Pour évitez tout problèmes, 
+veuillez laisser le copyright en l'état.
+
+
+!-----------------------------------------------!
+! Remerciement a tout le taff de rpg illusion   !
+!-----------------------------------------------!
+         C'est a dire remercié :
+         -Sff
+         -Inkonito
+         -Noia
+         -Tsunami
+         -Almost
+         -Mark
+         -Darkmore (moi)
+         -ggdj3000
+         -WhiteAnge
+         -Tchang
+         -Nipioko
+         -darknono
+         -Moi1449
+         -Grosdunords
+
+
+!-----------------------------------------------!
+!          CE QU'IL RESTAIT A FAIRE             !
+!-----------------------------------------------!
+- Créations des fonction du menu des maison [Fait 1.2c]
+- Régler fonction allopass(4 fonction allopass)[Fait 1.2c] 
+- NOuveau design (+ image des ville et compagnie)[Fait 1.2c]
+- Modification de l'install (Par Darkmore=moi)[Fait 1.2c]
+- Correction du resultat du sondage (merci noia)[Fait 1.2c]
+- Correction de l'editbloc dans l'admin (Par Darkmore=moi)[Fait 1.2c]
+
+
+!-----------------------------------------------!
+!           CORRECTIONS IMPORTANT               !
+!-----------------------------------------------!
+- Enelevage des faille dans le forum
+- Enelevage des faille dans les commentaires
+- Enelevage des faille dans les signature du forum
+- Enelevage des faille dans les maison.
+- Enelevage des faille dans la babblebox.
+
+!-----------------------------------------------!
+!               NOUVEAUTEs                      !
+!-----------------------------------------------!
+- NOUVEAU DESIGN
+- Ajout du moderation.
+- Ajout de l'upload d'avatar (modifier par darkmore).
+- Ajout des modo et des admin en couleurs.
+- Ajout de 20 avatar.
+- Ajout du compteur de message.
+- Ajout de la messagerie.
+- Ajout du clan.
+- Ajout du stock objet (en banque).
+- Ajout du nouveau template de combat.
+- Ajout de 50 image de monstres avec transparence.
+- Ajout des smiley et des bbcode dans le forum .
+- Ajout des smiley et des bbcode dans les news et nouvelles .
+- Ajout des smiley et des bbcode dans les commentaire et la bablebox .
+- Ajout des avatar dans le forum.
+- Ajout des signature dans le forum.
+- Ajout de l'auteur dans les news.
+- Ajout du marché et de ses extension (mod revente , sacados ...).
+- Finissions des maison effectué.
+- Ajout de l'enchanteur
+- Ajout de l'eglise
+- Ajout du point mis en place
+- Ajout de deux nouvelle possibilitez pour le allopass
+- Ajout de l'edit forum , addsort,addville dans l'admin
+- Ajout du systeme de travaille
+- Ajout du systeme d'achat de sort
+- Ajout du classement
+- Ajout du suppression de compte
+- Correction de la fonction train
+- Ajout des quêtes
+- Ajout de l'editquete
+- Ajout des encheres
+- Ajout des barre de vie, mp , hp sur la map.
+- Possibiliter de changer la monnaie de son jeu.
+Et plein d'autre petite amélioration
+
+
+
+
+ 
+

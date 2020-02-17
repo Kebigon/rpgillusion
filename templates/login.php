@@ -1,13 +1,40 @@
 <?php
+ob_start();
+include 'classe_best.php';
+$classe_best = ob_get_contents();
+ ob_end_clean();
+ ob_start();
+ 
+ob_start();
+include 'classe.php';
+$classe = ob_get_contents();
+ ob_end_clean();
+ ob_start();
+ 
+ob_start();
+include 'classe2.php';
+$classe2 = ob_get_contents();
+ ob_end_clean();
+ ob_start();
+
+ ob_start();
+include 'newsaccueil.php';
+$news = ob_get_contents();
+ ob_end_clean();
+ ob_start();
+ 
 $template = <<<THEVERYENDOFYOU
-<form action="login.php?do=login" method="post">
-<table width="75%">
-<tr><td width="30%">Username:</td><td><input type="text" size="30" name="username" /></td></tr>
-<tr><td>Password:</td><td><input type="password" size="30" name="password" /></td></tr>
-<tr><td>Remember me?</td><td><input type="checkbox" name="rememberme" value="yes" /> Yes</td></tr>
-<tr><td colspan="2"><input type="submit" name="submit" value="Log In" /></td></tr>
-<tr><td colspan="2">Checking the "Remember Me" option will store your login information in a cookie so you don't have to enter it next time you get online.<br /><br />Want to play? You gotta <a href="users.php?do=register">register your own character.</a><br /><br />You may also <a href="users.php?do=changepassword">change your password</a>, or <a href="users.php?do=lostpassword">request a new one</a> if you've lost yours.</td></tr>
+
+<table width="70%">
+<tr><td width="50%"><table width="300px" height="10px" background="././images/cellpic3.jpg"><tr><td><b>Classement joueurs</b>&nbsp; &nbsp; &nbsp; <a href="login.php?do=login2"><font color=\"OOOOOO\"> Classement guildes</a>&nbsp; &nbsp; &nbsp;</a><br></table><br><table width="100%">
+<tr><td width="40%">
+$classe_best</td><td>$classe </td></tr>
+</table></td><td></table><br><table width="300px" height="10px" background="././images/cellpic3.jpg"><tr><td><b>Les dernieres news</b>&nbsp; &nbsp; &nbsp; <a href="login.php?do=login4"><font color=\"OOOOOO\"> L'histoire ...</a><br></table><br>
+<table width="95%"><tr><td width="50%">
+$news
 </table>
-</form>
+
 THEVERYENDOFYOU;
+
+
 ?>
