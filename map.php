@@ -1,159 +1,186 @@
-<meta http-equiv="refresh" content="240">
-<body style="background-color:transparent">
-<bgsound src="./musiques/map.mid" autostart="true" loop="50000000000000000000000000000000000000000000000000">
-<table   width="478" height="454" style="background-image:url(images/sol/fond_carte.jpg)" border="0" >
-  <tr>
-    <td align="center" valign="middle">
-<?php
+<?
 
-	
-include('lib.php');
-include('config.php');
-include('cookies.php');
-$link = opendb();
-$userrow = checkcookies();
+function map(){
 
-global $userrow;
+global $userrow ; 
 
-if (isset($_COOKIE["dkgame"])) {
-	
-// Format du cookies:
-// {ID} {USERNAME} {PASSWORDHASH} {REMEMBERME}
-$theuser = explode(" ",$_COOKIE["dkgame"]);
-$username= $theuser[1];
-$id = $theuser[0];
-}
-$query2 = doquery("SELECT latitude,longitude FROM rpg_towns WHERE id='$id' LIMIT 1", "towns");
-$query = doquery("SELECT latitude,longitude FROM rpg_users WHERE id='$id' LIMIT 1", "users");
-$query2 = doquery("SELECT lati,longi FROM rpg_sol WHERE id='$id' LIMIT 1", "sol");
-$query2 = doquery("SELECT latitude,longitude,name FROM rpg_maison WHERE id='$id' LIMIT 1", "maison");
+$hpstat = $userrow[currenthp] / $userrow[maxhp] * 100;
+$mpstat = $userrow[currentmp] / $userrow[maxmp] * 100;
+$tpstat = $userrow[currenttp] / $userrow[maxtp] * 100;
 
-$deplaquery = doquery("SELECT id FROM rpg_users WHERE latitude='$latitude' AND longitude='$longitude' LIMIT 1", "users");
-$tabl = mysql_fetch_array($query);
-
-
-$latmax = $tabl['latitude'] + 5;
-$longmax = $tabl['longitude'] + 6;
-$latmin = $tabl['latitude'] - 5;
-$longmin = $tabl['longitude'] - 6;
-
-$hp = 100 / $userrow['maxhp'];
-$hp2 = $hp * $userrow['currenthp'];
-$tp = 100 / $userrow['maxtp'];
-$tp2 = $tp * $userrow['currenttp'];
-$mp = 100 / $userrow['maxmp'];
-$mp2 = $mp * $userrow['currentmp'];
+$latmax = $userrow['latitude'] + 4;
+$longmax = $userrow['longitude'] + 8;
+$latmin = $userrow['latitude'] - 5;
+$longmin = $userrow['longitude'] - 8;
 
 $latitude = $latmax;
-echo "<body><center><table>\n";
+echo "<bgsound src=\"musiques/map.mid\" autostart=\"true\" loop=\"5\">
+<link rel=\"stylesheet\" href=\"styles/css_php.css\" type=\"text/css\">
+<style>
+body { 
+ padding-right: 0px; 
+ padding-left: 0px; 
+ font: 11px verdana;
+ PADDING-BOTTOM: 0px; MARGIN: 0px; 
+ PADDING-TOP: 0px; 
+ FONT-FAMILY: Verdana, Arial, Helvetica, sans-serif; 
+ TOP: 0px; 
+} 
+
+table { 
+ font: 11px verdana;
+} 
+
+.mauve { 
+color: #990066; 
+font: 11px verdana;
+}
+
+.blancmap { 
+color: #D8D8D8; 
+ font: 10px verdana;
+}
+
+.blancmap2 { 
+color: #ffffff; 
+  font: 10px verdana;
+}</style>
+";
+
+echo " <table width=\"490\" height=\"9\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" align=\"center\">
+  <tr> 
+    <td height=\"9\" width=\"490\" background=\"images/carte/b1.gif\" colspan=\"3\" ></td></td>
+  </tr>
+  <tr> 
+    <td height=\"300\" width=\"9\" background=\"images/carte/b3.gif\"></td>
+    
+  <td width=\"472\" height=\"300\" align=\"center\" background=\"images/carte/herbe.jpg\" >";
+echo "<table width=\"472\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" height=\"300\" align=\"center\">\n";
+echo "<tr>";
 while ($latitude >= $latmin ) {
-echo "<tr>\n\n";
 $longitude = $longmin;
 while ($longitude <= $longmax) {
-$sql = "SELECT username, id, avatar FROM rpg_users WHERE latitude='$latitude' AND longitude='$longitude'";
-$query = mysql_query($sql);
-$fetch = mysql_fetch_array($query);
-$username = $fetch['username'];
-$avatar = $fetch['avatar'];
-$id = $fetch['id'];
+// infos personage 
+$perso = doquery("SELECT charname, avatar FROM {{table}} WHERE latitude='$latitude' AND longitude='$longitude' LIMIT 1", "users");
+$persorow = mysql_fetch_array($perso);
 
-$sql = "SELECT nimi FROM rpg_clans WHERE omanik='$id'";
-$query = mysql_query($sql);
-$fetch = mysql_fetch_array($query);
-$nimi = $fetch['nimi'];
+//infos map
+$query2 = doquery("SELECT nom FROM {{table}} WHERE lati='$latitude' AND longi='$longitude' LIMIT 1", "sol");
+$fetcht = mysql_fetch_array($query2);
+$sol = $fetcht['nom'];
 
-$sqll = "SELECT nom FROM rpg_sol WHERE lati='$latitude' AND longi='$longitude'";
-$query = mysql_query($sqll);
-$fetch = mysql_fetch_array($query);
-$sol = $fetch['nom'];
+// infos Maisons
+$query3 = doquery("SELECT name FROM {{table}} WHERE latitude='$latitude' AND longitude='$longitude' LIMIT 1", "maison");
+$fetchh = mysql_fetch_array($query3);
+$maison	= $fetchh['charname'];
 
-$sqll = "SELECT name FROM rpg_maison WHERE latitude='$latitude' AND longitude='$longitude'";
-$query = mysql_query($sqll);
-$fetch = mysql_fetch_array($query);
-$maison	= $fetch['name'];
+// infos Villes
+$query4 = doquery("SELECT name FROM {{table}} WHERE latitude='$latitude' AND longitude='$longitude' LIMIT 1", "towns");
+$fetchx = mysql_fetch_array($query4);
+$villes = $fetchx['name'];
 
-$sqll = "SELECT name FROM rpg_towns WHERE latitude='$latitude' AND longitude='$longitude'";
-$query = mysql_query($sqll);
-$fetch = mysql_fetch_array($query);
-$villes = $fetch['name'];
 if($villes !='') 
-{echo "<td style=\"background-image:url(images/sol/maison1.jpg)\" width=\"40\" height=\"40\"><img src=\"./images/sol/maison1.jpg\" width=\"35\" height=\"40\" border=\"0\" title=\"".$villes."\"></td>"; }
+{echo "<td><img src=\"images/carte/ville.jpg\" width=\"29\" height=\"29\" border=\"0\" title=\"".$villes."\"></td>"; }
 else {
-if($avatar!='') {
-echo "<td><img src=\"./images/avatar/".$avatar."\" width=\"35\" height=\"35\" border=\"0\" title=\"Id :".$id."/Pseudo:".$username."/Clan: ".$nimi."/Position:(".$longitude." , ".$latitude.")\"></td>";
+if($persorow['avatar']!='') {
+echo "<td style=\"background-image:url(images/avatar/carte/".$persorow['avatar'].".gif)\" width=\"29\" height=\"29\" title=\"".$persorow['charname']." (".$longitude." , ".$latitude.") est ici\"></td>";
 } else {
 if($maison !='') 
-{echo "<td style=\"background-image:url(images/sol/maison.jpg)\" width=\"40\" height=\"40\"><img src=\"./images/sol/maison.jpg\" width=\"35\" height=\"40\" border=\"0\" title=\"Maison de ".$maison."\"></td>"; }
+{echo "<td><img src=\"images/carte/maison.jpg\" width=\"29\" height=\"29\" border=\"0\" title=\"Maison de ".$maison."\"></td>"; }
 else {
 if($sol !='') {
-echo "<td style=\"background-image:url(./images/sol/".$sol.".jpg)\" width=\"35\" height=\"35\"></td>"; }
+echo "<td style=\"background-image:url(images/carte/".$sol.".gif)\" width=\"29\" height=\"29\"></td>"; }
 else {
-echo "<td style=\"background-image:url(./images/avatar/.gif)\" width=\"35\" height=\"35\"></td>\n";
+echo "<td></td>\n";
 }
 }
 }
 }
 $longitude++;
 }
-echo "</tr>";
+echo "</td></tr>";
 $latitude--;
 }
-echo '</table></center></body>';
+echo "</table>";
+echo "  </td>
 
-echo '<div id="Layer1" style="position:absolute; left:36; top:30; width:99; height:71; z-index:1">
-<table width="1" height="1" border="0" cellspacing="2" cellpadding="0">
-<tr> 
-<td width="6%" height="2"><span class="blancmap"><b><font size="2">HP</font></b></span></td>
-<td width="98"><span class="blancmap2"><div align="right"><font size="2">'.$userrow['currenthp'].'/ '.$userrow['maxhp'].'</font></div></span>
-<table width="100"height="2" border="0" cellspacing="0" cellpadding="0">
-<tr bgcolor="#000000"> 
-<td>
-<table width="'.$hp2.'" height="2" border="0" cellspacing="0" cellpadding="0">
-<tr bgcolor="#DA4A12"> 
-<td></td>
-</tr>
-</table>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr> 
-<td width="6%" height="2"><span class="blancmap"><b><font size="2">TP</font></b></span></td>
-<td width="98"><span class="blancmap2"><div align="right"><font size="2">'.$userrow['currenttp'].'/ '.$userrow['maxtp'].'</font></div></span>
-<table width="100" height="2" border="0" cellspacing="0" cellpadding="0">
-<tr bgcolor="#000000"> 
-<td>
-<table width="'.$tp2.'" height="2" border="0" cellspacing="0" cellpadding="0">
-<tr bgcolor="#CC00CC"> 
-<td></td>
-</tr>
-</table>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr> 
-<td width="6%" height="2"><span class="blancmap"><b><font size="2">MP</font></b></span></td>
-<td width="98"><span class="blancmap2"><div align="right"><font size="2">'.$userrow['currentmp'].'/ '.$userrow['maxmp'].'</font></div></span>
-<table width="100" height="2" border="0" cellspacing="0" cellpadding="0">
-<tr bgcolor="#000000"> 
-<td>
-<table width="'.$mp2.'" height="2" border="0" cellspacing="0" cellpadding="0">
-<tr bgcolor="#810FF5"> 
-<td></td>
-</tr>
-</table>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-</table>
-</div>';
-?>
-</td>
+ <td height=\"300\" width=\"9\" background=\"images/carte/b4.gif\"></td>
+  </tr>
+  <tr> 
+    <td colspan=\"3\" height=\"9\" width=\"490\" background=\"images/carte/b2.gif\"></td>
+  </tr>
+</table>";
+
+
+//Barre de hp,mp,tp.
+
+echo" <div id=\"Layer1\" style=\"position:absolute; left:11px; top:13px; width:462px; height:294px; z-index:1\">
+<table width=\"1\" height=\"1\" border=\"0\" cellspacing=\"2\" cellpadding=\"0\">
+  <tr> 
+    <td width=\"6%\" height=\"2\"><span class=\"blancmap\"><b>HP</b></span></td>
+    <td width=\"98\"><span class=\"blancmap2\"><div align=\"right\">".$userrow[currenthp]."/ ".$userrow[maxhp]."</div></span>
+      <table width=\"100\"height=\"2\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
+        <tr bgcolor=\"#000000\"> 
+          <td>
+		  <table width=\"".$hpstat."\"height=\"2\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
+        <tr bgcolor=\"#DA4A12\"> 
+          <td></td>
+        </tr>
+        </table>
+		  </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr> 
+    <td width=\"6%\" height=\"2\"><span class=\"blancmap\"><b>TP</b></span></td>
+    <td width=\"98\"><span class=\"blancmap2\"><div align=\"right\">".$userrow[currenttp]."/ ".$userrow[maxtp]."</div></span>
+        <table width=\"100\"height=\"2\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
+        <tr bgcolor=\"#000000\"> 
+          <td>
+		  <table width=\"".$tpstat."\"height=\"2\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
+        <tr bgcolor=\"#CC00CC\"> 
+          <td></td>
+        </tr>
+        </table>
+		  </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr> 
+    <td width=\"6%\" height=\"2\"><span class=\"blancmap\"><b>MP</b></span></td>
+    <td width=\"98\"><span class=\"blancmap2\"><div align=\"right\">".$userrow[currentmp]."/ ".$userrow[maxmp]."</div></span>
+        <table width=\"100\"height=\"2\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
+        <tr bgcolor=\"#000000\"> 
+          <td>
+		  <table width=\"".$mpstat."\"height=\"2\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
+        <tr bgcolor=\"#810FF5\"> 
+          <td></td>
+        </tr>
+        </table>
+		  </td>
+        </tr>
+      </table>
+    </td>
   </tr>
 </table>
+</div>";
 
+
+// Affichage de la position.
+
+echo "
+<div id=\"Layer3\" style=\"position:absolute; right:8px; top:9px; width:156px; height:17px; z-index:1\">
+<table width=\"156\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" height=\"17\" background=\"images/carte/haut1.gif\">
+  <tr>
+    <td align=\"center\">
+<span class=\"mauve\"><b>Long:</b></span> ".$userrow[longitude]." - <span class=\"mauve\"><b>Lat:</b></span> ".$userrow[latitude]."
+	</td>
+  </tr>
+</table>
+</div>";
+
+}
+
+?>

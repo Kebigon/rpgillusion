@@ -59,7 +59,6 @@ function fight() { // One big long function that determines the outcome of the f
     $pagearray["monstername"] = $monsterrow["name"];
     $pagearray["image"] = $monsterrow["image"];
     $pagearray["immunecontre"] = $monsterrow["immunecontre"];
-	$pagearray["image2"] = $userrow["avatar"];
  
 // Do run stuff.
     if (isset($_POST["run"])) {

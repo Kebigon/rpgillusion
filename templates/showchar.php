@@ -4,7 +4,7 @@ $template = <<<THEVERYENDOFYOU
 <tr><td class="title"><img src="images/button_character.gif" alt="Personnage" title="Personnage" /></td></tr>
 <tr><td>
 <b>{{charname}}</b><br /><br />
-<img src="././images/avatar/{{avatar}}" width="71" height="66"><br /><br />
+<img src="././images/avatar/num-{{avatar}}.gif" width="71" height="66"><br /><br />
 
 Difficulté: {{difficulty}}<br />
 Classe: {{charclass}}<br /><br />

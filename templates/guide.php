@@ -5,10 +5,10 @@ $template = <<<THEVERYENDOFYOU
 
 
     <td class=middle height="1664"> 
-  <table width=280 align=center border=0>
+  <table width=580 align=center border=0>
     <tbody> 
     <tr> 
-      <td width=280 height=7>
+      <td width=580 height=7>
         <p><img src=./images/pic2.gif /> <a href="login.php?do=login">Retour à l'accueil 
         </a></p>
         </td>
@@ -17,7 +17,7 @@ $template = <<<THEVERYENDOFYOU
     </tbody> 
   </table>
   <br>
-      <table width=280 align=center bgcolor=#fff0d8 border=1>
+      <table width=580 align=center bgcolor=#fff0d8 border=1>
         <tbody> 
         <tr> 
           <td bgcolor=#f0d4b0 colspan=2 height=7> 
@@ -102,16 +102,16 @@ $template = <<<THEVERYENDOFYOU
       <p align=center>&nbsp;<a 
       href="guide.php?do=login#">Retour en haut 
         </a></p>
-      <table width=280 align=center bgcolor=#fff0d8 border=1>
+      <table width=580 align=center bgcolor=#fff0d8 border=1>
         <tbody> 
         <tr> 
-          <td width=280 bgcolor=#f0d4b0 height=7> 
+          <td width=580 bgcolor=#f0d4b0 height=7> 
             <p align=center><a target=_top><a name=2></a></a><a>1- Comment se 
               déplacé</a></p>
           </td>
         </tr>
         <tr> 
-          <td width=280 height=5> 
+          <td width=580 height=5> 
             <p align=center>En haut à gauche vous avez sans doute remarqué qu'il 
               y a les points cardinaux.<br>
               Vous n'avez qu'à cliquer sur l'un d'eux pour aller dans la direction 
@@ -127,15 +127,15 @@ $template = <<<THEVERYENDOFYOU
       <p align=center>&nbsp;<a 
       href="guide.php?do=login#">Retour en haut 
         </a></p>
-      <table height=77 width=280 align=center bgcolor=#fff0d8 border=1>
+      <table height=77 width=580 align=center bgcolor=#fff0d8 border=1>
         <tbody> 
         <tr> 
-          <td width=280 bgcolor=#f0d4b0 height=7> 
+          <td width=580 bgcolor=#f0d4b0 height=7> 
             <p align=center><a target=_top><a name=3></a></a><a>2- Comment combattre</a></p>
           </td>
         </tr>
         <tr> 
-          <td width=280 height=38> 
+          <td width=580 height=38> 
             <p align=center>Déplacez-vous aléatoirement et au bout de quelques 
               déplacement vous devriez tombé sur un monstre plus ou moins fort, 
               comparez son niveau au votre et si vous jugez que vous êtes à la 
@@ -157,15 +157,15 @@ $template = <<<THEVERYENDOFYOU
       <p align=center>&nbsp;<a 
       href="guide.php?do=login#">Retour en haut 
         </a></p>
-      <table width=280 align=center bgcolor=#fff0d8 border=1>
+      <table width=580 align=center bgcolor=#fff0d8 border=1>
         <tbody> 
         <tr> 
-          <td width=280 bgcolor=#f0d4b0 height=7> 
+          <td width=580 bgcolor=#f0d4b0 height=7> 
             <p align=center><a target=_top><a name=4></a></a><a>3- Comment acheter</a></p>
           </td>
         </tr>
         <tr> 
-          <td width=280 height=7> 
+          <td width=580 height=7> 
             <p align=center>Il suffit de se rendre dans une ville.<br>
               Les villes se situe sur la "map", vous pouvez vous y rendre à <a 
             href="guide.php?do=login#2">pied</a> 
@@ -184,16 +184,16 @@ $template = <<<THEVERYENDOFYOU
       <p align=center>&nbsp;<a 
       href="guide.php?do=login#">Retour en haut 
         </a></p>
-      <table width=280 align=center bgcolor=#fff0d8 border=1>
+      <table width=580 align=center bgcolor=#fff0d8 border=1>
         <tbody> 
         <tr> 
-          <td width=280 bgcolor=#f0d4b0 height=7> 
+          <td width=580 bgcolor=#f0d4b0 height=7> 
             <p align=center><a target=_top><a name=5></a></a><a>4- Comment se 
               soigner</a></p>
           </td>
         </tr>
         <tr> 
-          <td width=280 height=7> 
+          <td width=580 height=7> 
             <p align=center>Il suffit de vous rendre sur une des villes se situant 
               sur la "map" et de cliquer sur :</p>
             <p align=center>" Se reposer à l'auberge "</p>
@@ -205,16 +205,16 @@ $template = <<<THEVERYENDOFYOU
       <p align=center>&nbsp;<a 
       href="guide.php?do=login#">Retour en haut 
         </a></p>
-      <table width=280 align=center bgcolor=#fff0d8 border=1>
+      <table width=580 align=center bgcolor=#fff0d8 border=1>
         <tbody> 
         <tr> 
-          <td width=280 bgcolor=#f0d4b0 height=7> 
+          <td width=580 bgcolor=#f0d4b0 height=7> 
             <p align=center><a target=_top><a name=6></a></a><a>5- Comment utiliser 
               un sort</a></p>
           </td>
         </tr>
         <tr> 
-          <td width=280 height=7> 
+          <td width=580 height=7> 
             <p align=center>Lorsque vous <a 
             href="guide.php?do=login#3">combattez</a>, 
               vous pouvez selectionné les sorts.<br>
@@ -234,16 +234,16 @@ $template = <<<THEVERYENDOFYOU
       <p align=center>&nbsp;<a 
       href="guide.php?do=login#">Retour en haut 
         </a></p>
-      <table width=280 align=center bgcolor=#fff0d8 border=1>
+      <table width=580 align=center bgcolor=#fff0d8 border=1>
         <tbody> 
         <tr> 
-          <td width=280 bgcolor=#f0d4b0 height=7> 
+          <td width=580 bgcolor=#f0d4b0 height=7> 
             <p align=center><a target=_top><a name=7></a></a><a>6- Comment se 
               téléporter</a></p>
           </td>
         </tr>
         <tr> 
-          <td width=280 height=5> 
+          <td width=580 height=5> 
             <p align=center>il suffit d'acheter <a 
             href="guide.php?do=login#8">les cartes</a> 
               d'abord ! </p>
@@ -262,16 +262,16 @@ $template = <<<THEVERYENDOFYOU
       <p align=center>&nbsp;<a 
       href="guide.php?do=login#">Retour en haut 
         </a></p>
-      <table width=280 align=center bgcolor=#fff0d8 border=1>
+      <table width=580 align=center bgcolor=#fff0d8 border=1>
         <tbody> 
         <tr> 
-          <td width=280 bgcolor=#f0d4b0 height=7> 
+          <td width=580 bgcolor=#f0d4b0 height=7> 
             <p align=center><a target=_top><a name=8></a></a><a>7- Comment acheter 
               des cartes</a></p>
           </td>
         </tr>
         <tr> 
-          <td width=280 height=5> 
+          <td width=580 height=5> 
             <p align=center>Il suffit de vous rendre à une ville et de cliquer 
               sur :</p>
             <p align=center>" Acheter cartes "</p>

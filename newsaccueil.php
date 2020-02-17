@@ -19,7 +19,7 @@ include("config.php");
 		echo "    <td height=\"1px \"align=\"center\" class=\"login\" ><img src=\"././images/icon_news.gif\"  border=\"0\"></td>";
 	        echo "    <td width=\"333px\" height=\"1px align=\"left\" ><font color=\"fe7314\">" . prettydatenews($row["postdate"]). "&nbsp;</font><a onMouseOver=\"popup('<font color=#CC0099><u><b>" . $count . "/ " .addslashes(htmlspecialchars($row["titre"])) ."</b></u></font><br><img src=././images/space_bulle.gif><br>" .addslashes(htmlspecialchars($row["content"])) ." ','#FFFFF9')\" onMouseOut=\"kill();\">
 
-<a href='viewnews.php?news=".$row["id"]."'>" . $row["titre"] . "</a></td>";
+" . $row["titre"] . "</a></td>";
                 echo "    </tr>";
                 echo "    <tr>";
                 echo "    <td height=\"1px><img src=\"././images/classement/espace.gif\" width=\"24px\" height=\"3\"></td>";

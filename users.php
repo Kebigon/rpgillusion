@@ -17,8 +17,6 @@ function register() { // Créer un nouveau compte.
     
     $controlquery = doquery("SELECT * FROM {{table}} WHERE id='1' LIMIT 1", "control");
     $controlrow = mysql_fetch_array($controlquery);
-	$parainquery = doquery("SELECT * FROM {{table}} WHERE username='".$_POST['parain']."' LIMIT 1", "users");
-    $parainrow = mysql_fetch_array($parainquery); 
     
     if (isset($_POST["submit"])) {
         
@@ -54,12 +52,11 @@ function register() { // Créer un nouveau compte.
             } else {
                 $verifycode='1';
             }
-			
-			$newpar = $parainrow["bank"] + 50 ;
-            $query = doquery("UPDATE {{table}} SET bank='$newpar' WHERE username='".$_POST['parain']."' ", "users") or die(mysql_error()); 
-            $query = doquery("INSERT INTO {{table}} SET id='',regdate=NOW(),verify='$verifycode',username='$username',password='$password',email='$email1',charname='$charname',miniavatar='$avatar',avatar='$avatar',charclass='$charclass',difficulty='$difficulty',age='$age'", "users") or die(mysql_error());
-			
-                if ($controlrow["verifyemail"] == 1) {
+            
+            $query = doquery("INSERT INTO {{table}} SET id='',regdate=NOW(),verify='$verifycode',maxmp='1', username='$username',password='$password',email='$email1',charname='$charname',miniavatar='$avatar',avatar='$avatar',charclass='$charclass',difficulty='$difficulty'", "users") or die(mysql_error());
+            
+
+if ($controlrow["verifyemail"] == 1) {
                 if (sendregmail($email1, $verifycode) == true) {
                     $page = "Votre compte a été crée avec succès.<br /><br />Vous devriez recevoir un email de vérification de compte sous peu. Vous aurez besoin du code de vérification contenu dans l'email. Sans ce code vous ne pourrez pas jouer. Lorsque vous aurez recu cet Email  allez à la page de <a href=\"users.php?do=verify\">Verification Page</a> et remplissez les champs requis.";
                 } else {
@@ -211,7 +208,7 @@ function mymail($to, $title, $body, $from = '') { // Merci de ne pas modifier ce
     $controlquery = doquery("SELECT * FROM {{table}} WHERE id='1' LIMIT 1", "control");
     $controlrow = mysql_fetch_array($controlquery);
     extract($controlrow);
-
+    
 
   $from = trim($from);
 
@@ -233,13 +230,13 @@ function mymail($to, $title, $body, $from = '') { // Merci de ne pas modifier ce
   $head  .= "Organization: $org \r\n";
   $head  .= "X-Sender: $from \r\n";
   $head  .= "X-Priority: 3 \r\n";
-  $head  .= "X-Mailer: .$mailer \r\n";
+  $head  .= "X-Mailer: $mailer \r\n";
 
   $body  = str_replace("\r\n", "\n", $body);
   $body  = str_replace("\n", "\r\n", $body);
 
   return mail($to, $title, $body, $head);
-
+  
 }
 
 

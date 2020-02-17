@@ -18,7 +18,6 @@ TP: {{currenttp}}<br />
 <table width="205px" height="56px" background="././images/bg9.gif">
 <tr><td></td></tr></table>
 <table width="205px"   height="100%" background="././images/bg9-b.gif"><tr><td>
-<td width="205px"><img src="././images/pic.gif"><a href=index.php?do=sacados>&nbsp;Sac a Dos</a><br>
 <tr><td><img src="images/icon_weapon.gif" alt="Arme" title="Weapon" /></td><td width="205px">Arme: {{weaponname}}</td></tr>
 <tr><td><img src="images/icon_armor.gif" alt="Armure" title="Armor" /></td><td width="205px">Armure: {{armorname}}</td></tr>
 <tr><td><img src="images/icon_shield.gif" alt="Protection" title="Shield" /></td><td width="205px">Protection: {{shieldname}}</td></tr></table>

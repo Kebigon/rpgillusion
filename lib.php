@@ -91,37 +91,6 @@ function my_htmlspecialchars($text) { // Merci à "etymxris at yahoo dot com" de 
   
 }
 
-function mododisplay($content, $title) { // Page en fonction du navagateur.
-    
-    global $numqueries, $userrow, $controlrow, $starttime, $version, $build;
-    if (!isset($controlrow)) {
-        $controlquery = doquery("SELECT * FROM {{table}} WHERE id='1' LIMIT 1", "control");
-        $controlrow = mysql_fetch_array($controlquery);
-    }
-    
-    $template = gettemplate("modo");
-    
-    // Tags pour la validation XHTML.
-    $xml = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n"
-    . "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//FR\" \"DTD/xhtml1-transitional.dtd\">\n"
-    . "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"fr\" lang=\"fr\">\n";
-
-    $finalarray = array(
-        "title"=>$title,
-        "content"=>$content,
-        "totaltime"=>round(getmicrotime() - $starttime, 4),
-        "numqueries"=>$numqueries,
-        "version"=>$version,
-        "build"=>$build);
-    $page = parsetemplate($template, $finalarray);
-    $page = $xml . $page;
-
-    if ($controlrow["compression"] == 1) { ob_start("ob_gzhandler"); }
-    echo $page;
-    die();
-    
-}
-
 function admindisplay($content, $title) { // Page en fonction du navagateur.
     
     global $numqueries, $userrow, $controlrow, $starttime, $version, $build;
@@ -194,7 +163,7 @@ function display($content, $title, $topnav=true, $leftnav=true, $rightnav=true, 
         }
         
         if ($controlrow["forumtype"] == 0) { $userrow["forumslink"] = ""; }
-        elseif ($controlrow["forumtype"] == 1) { $userrow["forumslink"] = "<a href=\"forum.php?do=forum\">Forum</a><br />"; }
+        elseif ($controlrow["forumtype"] == 1) { $userrow["forumslink"] = "<a href=\"forum.php\">Forum</a><br />"; }
         elseif ($controlrow["forumtype"] == 2) { $userrow["forumslink"] = "<a href=\"".$controlrow["forumaddress"]."\">Forum</a><br />"; }
         
         // Formats lettres de déplacement.
@@ -202,8 +171,7 @@ function display($content, $title, $topnav=true, $leftnav=true, $rightnav=true, 
         if ($userrow["longitude"] < 0) { $userrow["longitude"] = $userrow["longitude"] * -1 . "W"; } else { $userrow["longitude"] .= "E"; }
         $userrow["experience"] = number_format($userrow["experience"]);
         $userrow["gold"] = number_format($userrow["gold"]);
-        if ($userrow["authlevel"] == 1) { $userrow["adminlink"] = "<img src=\"images/site/pic.gif\"/>&nbsp;<a href=\"admin/admin.php\">Admin</a><br />"; } else { $userrow["adminlink"] = ""; }
-        if ($userrow["authlevel"] == 3) { $userrow["modolink"] = "<img src=\"images/site/pic.gif\"/>&nbsp;<a href=\"admin/modo.php\">Modo</a><br />"; } else { $userrow["modolink"] = ""; }
+        if ($userrow["authlevel"] == 1) { $userrow["adminlink"] = "<img src=\"images/pic.gif\"/>&nbsp;<a href=\"admin.php\">Admin</a><br />"; } else { $userrow["adminlink"] = ""; }
         
         // Barres HP/MP/TP.
         $stathp = ceil($userrow["currenthp"] / $userrow["maxhp"] * 100);
@@ -256,32 +224,13 @@ function display($content, $title, $topnav=true, $leftnav=true, $rightnav=true, 
                 if ($b == $townrow2["id"]) { $town = true; }
             }
             if ($town == true) { 
-                $userrow["townslist"] .= "<img src=\"images/site/pic.gif\"/>&nbsp;<a href=\"index.php?do=gotown:".$townrow2["id"]."\">".$townrow2["name"]."</a><br />\n"; 
+                $userrow["townslist"] .= "<img src=\"images/pic.gif\"/>&nbsp;<a href=\"index.php?do=gotown:".$townrow2["id"]."\">".$townrow2["name"]."</a><br />\n"; 
             }
         }
-		
-		$nb0 = doquery("SELECT * FROM {{table}} WHERE destinataire='".$userrow[id]."' AND statut='Non lu'", "msg");
-        $nb = mysql_num_rows($nb0);
-        $userrow["nb"] .= "$nb"; 
-
         
     } else {
         $userrow = array();
     }
-	
-	$newmsg = doquery("SELECT id FROM {{table}} WHERE destinataire='$userrow[id]' AND statut='Non lu'","msg");
-		$nummsg = mysql_num_rows($newmsg);
-		
-		if($nummsg > 0)
-		{
-			$msglink = '<a href="messagerie.php" style="color:red;"> Messagerie</a><br /><br />';
-		}
-		else
-		{
-			$msglink = '<a href="messagerie.php"> Messagerie</a><br /><br />
-';
-		}
-
 
     $finalarray = array(
         "dkgamename"=>$controlrow["gamename"],
@@ -293,7 +242,6 @@ function display($content, $title, $topnav=true, $leftnav=true, $rightnav=true, 
         "totaltime"=>round(getmicrotime() - $starttime, 4),
         "numqueries"=>$numqueries,
         "version"=>$version,
-		"msglink"=>$msglink,
         "build"=>$build);
     $page = parsetemplate($template, $finalarray);
     $page = $xml . $page;

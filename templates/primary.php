@@ -1,11 +1,11 @@
 <?php
 
 ob_start();
-include './blocs.php';
+include 'blocs.php';
 $blocs = ob_get_contents();
  ob_end_clean();
  ob_start();
- 
+
 $template = <<<THEVERYENDOFYOU
 <head>
 <title>{{title}}</title>
@@ -20,10 +20,87 @@ $template = <<<THEVERYENDOFYOU
 <meta name='robots' content='index, follow'>
 <meta name='Generator' content='Wordpad'>
 <meta name='Copyright' content='RPGillusion'>
-<LINK REL="shortcut icon" HREF="../images/site/ico.ico">
+<LINK REL="shortcut icon" HREF="../images/ico.ico">
+
+<style type="text/css">
+body {
+  background-image: url(images/background.jpg);
+  color: black;
+  font: 11px verdana;
+}
+table {
+  border-style: none;
+  padding: 0px;
+  font: 11px verdana;
+}
+
+td {
+  border-style: none;
+  padding: 3px;
+  vertical-align: top;
+}
+td.top {
+  width: 889px;
+  border-bottom: solid 1px black;
+  border-style:dotted;
+  border-left: solid 0px white;
+  border-top: solid 0px white;
+  border-right: solid 0px black; 
+}
+td.left {
+  width: 180px;
+  border-right: solid 1px black; 
+  border-style:dotted;
+  border-left: solid 0px white;
+ border-top: solid 0px white;
+ border-bottom: solid 0px white;
+}
+td.right {
+  width: 205px;
+   border-left: solid 1px black; 
+   border-style:dotted;
+  border-right: solid 0px white;
+  border-top: solid 0px white;
+  border-bottom: solid 0px white;
+}
+a {
+    color: #663300;
+    text-decoration: none;
+    font-weight: bold;
+}
+a:hover {
+    color: #330000;
+}
+.small {
+  font: 10px verdana;
+}
+.highlight {
+  color: red;
+}
+.light {
+  color: #999999;
+}
+.title {
+  padding: 1px;
+  margin: 0px;
+}
+.location {
+  border: solid 1px white;
+  padding: 5px;
+  margin: 0px;
+}
+.copyright {
+  border: solid 1px black;
+  background-color: #eeeeee;
+  font: 10px verdana;
+}
+
+</style>
+ 
 
 
 <script>
+
 function opencharpopup(){
 var popurl="index.php?do=showchar"
 winpops=window.open(popurl,"","width=210,height=500,scrollbars")
@@ -33,91 +110,23 @@ var popurl="index.php?do=showmap"
 winpops=window.open(popurl,"","width=520,height=520,scrollbars")
 }
 </script>
+
+ 
 </head>
-<head>
-
-<h2 id="up"></h2>
-  <link title="style" type="text/css" rel="stylesheet" href="style.css">
-</head>
-<body topmargin="0" bottommargin="0" style="background-image: url(images/site/fond.gif);">
-<table align="center" border="0" cellpadding="0" cellspacing="0" width="744">
-  <tbody>
-    <tr>
-      <td><a href="index.php" title="Rpg Illusion 1.2c"><img src="images/site/header.jpg" alt="Rpg Illusion 1.2c" border="0"></a></td>
-    </tr>
-  </tbody>
-</table>
-<table valign="top" align="center" border="0" cellpadding="0" cellspacing="0" width="744">
-  <tbody>
-    <tr>
-      <td background="images/site/menu_fond.jpg" bgcolor="#cdbca3" valign="top" width="182">
-      <table border="0" cellpadding="0" cellspacing="0">
-        <tbody>
-          <tr>
-           <td width="184"><img src="images/site/main_nav.jpg" height="22" width="182"></td>
-          </tr>
-          <tr>
-            <td valign="top" width="182">
-            <table valign="top" align="center" width="150">
-              <tbody>
-                <tr>
-                  <td>
-				  
-	<!-- Navigation! -->
-
-                  <div id="menu">                  </div>
-
-{{leftnav}}
-
-
-$blocs
-Dévelopé par Darkmore
-<!--  Fin Navigation! -->
-				 </td>
-                  </tr>
-              </tbody>
-            </table>            </tr>
-        </tbody>
-      </table>      </td>
-      <td background="images/site/contenu_fond.jpg" valign="top">
-      <table valign="top" align="center" bgcolor="#cdbca3" cellpadding="0" cellspacing="0">
-        <tbody>
-        </tbody>
-      </table>
-      <table valign="top" align="left" cellpadding="0" cellspacing="0">
-        <tbody>
-          <tr>
-            <td height="28"><img src="images/site/news_and_content.jpg" alt=""></td>
-          </tr>
-          <tr>
-            <td align="center" valign="top">
-            <table valign="top" style="border-style: none solid solid; border-color: rgb(167, 153, 133); border-width: 0px 1px 1px; margin-left: 18px;" bgcolor="#e2d9c7" cellpadding="0" cellspacing="0" width="512">
-              <tbody>
-                <tr>
-                  <td valign="top"><br>
-				  {{content}}
-<!-- Fin Parti texte! -->         </td>
-               </tr>
-              </tbody>
-            </table>            </td>
-          </tr>
-        </tbody>
-      </table>      </td>
-    </tr>
-    <tr>
-      <td background="images/site/menu_fond.jpg" bgcolor="#cdbca3" valign="top"><img src="images/site/footer_menu.jpg"></td>
-      <td background="images/site/contenu_fond.jpg" valign="top"><img src="images/site/footer_contenu.jpg"></td>
-    </tr>
-  </tbody>
-  </table>  
+<body> <center>
+<table cellspacing="0" width="75%"><tr>
+<td class="top" colspan="3">
+  <table width="75%"><tr><td><img src="images/logo.gif" alt="{{dkgamename}}" title="{{dkgamename}}" border="0"/></td><td style="text-align:right; vertical-align:middle;">{{topnav}}</td></tr></table>
 </td>
-</table>
-</body>
-
-
-
-</body>
+</tr><tr>
+<td class="left">{{leftnav}}</td>
+<td class="middle">{{content}}</td>
+<td class="right">{{rightnav}}</td>
+</tr>
+</table><br />
+<table class="classement " width="90%"><tr>
+<td width="25%" align="center" valign="middle">$blocs</table>
+</center></body>
 </html>
 THEVERYENDOFYOU;
-
 ?>

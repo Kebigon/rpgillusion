@@ -10,9 +10,7 @@ if (isset($_GET["page"])) {
     if ($page == 2) { second(); }
     elseif ($page == 3) { third(); }
     elseif ($page == 4) { fourth(); }
-	elseif ($page == 5) { quatre(); }
-	elseif ($page == 6) { cinq(); }
-	elseif ($page == 7) { fifth(); }
+    elseif ($page == 5) { fifth(); }
     else { first(); }
 } else { first(); }
 
@@ -36,12 +34,12 @@ function first() { // Première page - infos et avertissements sur l'installation
 $page = <<<END
 <html>
 <head>
-<title>Installation de RPG illusion 1.2c </title>
+<title>Installation de RPG illusion</title>
 </head>
 <body>
-<font  face="verdana" size="3"><b>Installation de RPG illusion 1.2c : page 1</b></font><br /><br />
+<font  face="verdana" size="3"><b>Installation de RPG illusion: page 1</b></font><br /><br />
 <font  face="verdana" size="2"><b>NOTE:</b> Veuillez vous assurer que les infos dans config.php, ont été complétées correctement avant de continuer.  L'installation échouera si ces infos ne sont pas correctes.  En outre, la base de données de MySQL doit exister déjà.  Ce script d'installation prendra soin d'installer la structure et le contenu du jeu, mais la base de données elle-même doit déjà exister sur votre serveur de MySQL avant d'éxécuter l'installation.<br /><br />
-L'Installation de RPG illusion 1.2c  est un processus en trois étapes simple:  installez les tables de la base de données, puis créez l'utilisateur d'administration, et enfin les réglages principaux.  Après ces trois étape le jeu sera totalement installé.<br /><br />
+L'installation de RPG illusion est un processus en deux étapes simple:  installez les tables de la base de données, puis créez l'utilisateur d'administration.  Après ces deux étape le jeu sera totalement installé.<br /><br />
 Vous avez le choix entre 2 types d'installation:
 <ul>
 <li /><b>L'installation complète</b> crée toutes les tables de la base données, et elle les complètent par défault - après l'installation complète, le jeu est prêt à fonctionner.
@@ -53,7 +51,6 @@ Cliquez le bouton d'installation qui vous convient.<br /><br />
 </form>
 </body>
 </html>
-
 END;
 echo $page;
 die();
@@ -63,16 +60,8 @@ die();
 	function second() { // Deuxième page - Installation des tables mysql.
     
     global $dbsettings;
-    echo "<html><head><title>Installation de RPG illusion 1.2c </title></head><body><b>Installation de RPG illusion 1.2c : page 2</b><br /><br />";
+    echo "<html><head><title>Installation de RPG illusion</title></head><body><b>Installation de RPG illusion: page 2</b><br /><br />";
     $prefix = $dbsettings["prefix"];
-	$clans = $prefix . "_clans";
-	$kambauudised = $prefix . "_kambauudised";
-	$liitujad = $prefix . "_liitujad";
-	$quete = $prefix . "_quete";
-	$sondage = $prefix . "_sondage";
-	$sondage_ip = $prefix . "_sondage_ip";
-	$resultats = $prefix . "_resultats";
-	$encheres = $prefix . "_encheres";
     $babble = $prefix . "_babble";
     $blocs = $prefix . "_blocs";
     $control = $prefix . "_control";
@@ -80,12 +69,13 @@ die();
     $drops = $prefix . "_drops";
     $forum = $prefix . "_forum";
     $items = $prefix . "_items";
-	$items2 = $prefix . "_items2";
     $levels = $prefix . "_levels";
     $monsters = $prefix . "_monsters";
-	$msg = $prefix . "_msg";
     $news = $prefix . "_news";
     $newsaccueil = $prefix . "_newsaccueil";
+    $resultats = $prefix . "_resultats";
+    $sondage = $prefix . "_sondage";
+    $sondage_ip = $prefix . "_sondage_ip";
     $spells = $prefix . "_spells";
     $towns = $prefix . "_towns";
 	$maison = $prefix . "_maison";
@@ -93,140 +83,6 @@ die();
     $users = $prefix . "_users";
     $map = $prefix . "_map";
     if (isset($_POST["complete"])) { $full = true; } else { $full = false; }
-	
-	$query = <<<END
-CREATE TABLE `$msg` (
-  `id` int(11) NOT NULL auto_increment,
-  `titre` varchar(80) NOT NULL default '',
-  `message` text NOT NULL,
-  `date` int(15) NOT NULL default '0',
-  `envoyeur` int(10) NOT NULL default '0',
-  `destinataire` int(10) NOT NULL default '0',
-  `statut` enum('Lu','Non lu','Archivé') NOT NULL default 'Lu',
-  PRIMARY KEY  (`id`)
-) TYPE=MyISAM;
-END;
-if (dobatch($query) == 1) { echo "La table Msg a été crée.<br />"; } else { echo "Erreur de création de la table MSg."; }
-unset($query);
-	
-$query = <<<END
-CREATE TABLE `$clans` (
-  `id` int(10) unsigned NOT NULL auto_increment,
-  `nimi` text collate latin1_general_ci NOT NULL,
-  `name` varchar(30) collate latin1_general_ci NOT NULL default '',
-  `logo` varchar(120) collate latin1_general_ci NOT NULL default '',
-  `kuulsus` mediumint(8) NOT NULL default '0',
-  `omanik` mediumint(8) NOT NULL default '0',
-  `kambaid` smallint(2) NOT NULL default '0',
-  PRIMARY KEY  (`id`)
-) TYPE=MyISAM;
-END;
-if (dobatch($query) == 1) { echo "La table CLans a été crée.<br />"; } else { echo "Erreur de création de la table Clans."; }
-unset($query);
-
-$query = <<<END
-CREATE TABLE `$kambauudised` (
-  `id` bigint(255) NOT NULL auto_increment,
-  `kambaid` smallint(2) NOT NULL default '0',
-  `lisajaid` bigint(255) NOT NULL default '0',
-  `lisajanimi` text collate latin1_general_ci NOT NULL,
-  `sisu` text collate latin1_general_ci NOT NULL,
-  UNIQUE KEY `id` (`id`)
-) TYPE=MyISAM;
-END;
-if (dobatch($query) == 1) { echo "La table kambauudised a été crée.<br />"; } else { echo "Erreur de création de la table kambauudised."; }
-unset($query);
-
-$query = <<<END
-CREATE TABLE `$liitujad` (
-  `id` int(10) unsigned NOT NULL auto_increment,
-  `kambaid` smallint(2) NOT NULL default '0',
-  `kuulsus` mediumint(8) NOT NULL default '0',
-  `liitujaid` mediumint(8) NOT NULL default '0',
-  `liitujanimi` varchar(30) NOT NULL,
-  UNIQUE KEY `id` (`id`)
-) TYPE=MyISAM;
-END;
-if (dobatch($query) == 1) { echo "La table liitujad a été crée.<br />"; } else { echo "Erreur de création de la table liitujad."; }
-unset($query);
-
-$query = <<<END
-CREATE TABLE `$quete` (
-  `id` int(11) NOT NULL auto_increment,
-  `name` varchar(50) NOT NULL default '',
-  `description` longtext NOT NULL,
-  `level` int(3) NOT NULL default '0',
-  `type` tinyint(1) NOT NULL default '0',
-  `monster` varchar(30) default NULL,
-  `number` int(5) default NULL,
-  `longi` int(5) NOT NULL default '0',
-  `lati` int(5) NOT NULL default '0',
-  `town` varchar(30) NOT NULL default '',
-  `experience` int(11) NOT NULL default '0',
-  `gils` int(11) NOT NULL default '0',
-  `prolongation` smallint(6) NOT NULL default '0',
-  PRIMARY KEY  (`id`)
-) TYPE=MyISAM;
-END;
-if (dobatch($query) == 1) { echo "La table Quete a été crée.<br />"; } else { echo "Erreur de création de la table Quete."; }
-unset($query);
-
- $query = <<<END
-CREATE TABLE `$sondage_ip` (
-  `numero` varchar(10) NOT NULL default '',
-  `ip` varchar(100) NOT NULL default ''
-) TYPE=MyISAM;
-END;
-if (dobatch($query) == 1) { echo "La table sondage_ip a été crée.<br />"; } else { echo "Erreur de création de la table sondage_ip."; }
-unset($query);   
-
- $query = <<<END
-CREATE TABLE `$resultats` (
-  `numero` int(6) NOT NULL default '0',
-  `reponse` varchar(200) NOT NULL default ''
-) TYPE=MyISAM;
-END;
-if (dobatch($query) == 1) { echo "La table resultats a été crée.<br />"; } else { echo "Erreur de création de la table resultats."; }
-unset($query);   
-
-$query =
-"CREATE TABLE `$sondage`(
-  `id` int(6) NOT NULL auto_increment,
-  `question` varchar(200) NOT NULL default '',
-  `reponse1` varchar(200) NOT NULL default '',
-  `reponse2` varchar(200) NOT NULL default '',
-  `reponse3` varchar(200) NOT NULL default '',
-  `reponse4` varchar(200) NOT NULL default '',
- PRIMARY KEY(id)
-)";  
- if (dobatch($query) == 1) { echo "La table sondage a été crée.<br />"; } else { echo "Erreur de création de la table sondage"; }
-unset($query);
-$query = <<<END
-INSERT INTO `$sondage` VALUES (1, 'Comment vous trouvez le jeu?', 'Génial', 'Moyen', 'Bof', 'Nul');
-END;
-if (dobatch($query) == 1) { echo "La table sondage a été complétée.<br />"; } else { echo "Erreur lorsque la table sondage a été complétée."; }
-unset($query);
-
-$query = <<<END
-	CREATE TABLE `$encheres` (
-	id int(10) unsigned NOT NULL auto_increment,
-	posttime int(255) unsigned NOT NULL default '0',
-	proprietaire varchar(30) NOT NULL default '',
-	acheteur varchar(120) NOT NULL default 'Aucuns',
-	datefin int(255) unsigned NOT NULL default '0',
-	type tinyint(3) unsigned NOT NULL default '0',
-	idobjet tinyint(3) unsigned NOT NULL default '0',
-	name varchar(30) NOT NULL default'' ,
-	buycost smallint(5) unsigned NOT NULL default '0',
-	attribute smallint(5) unsigned NOT NULL default '0',
-	special varchar(50) NOT NULL default '',
-	image tinyint(3) unsigned NOT NULL default '0',
-	description varchar(100) NOT NULL default 'Aucunes',
-	PRIMARY KEY  (`id`)
-) TYPE=MyISAM;
-END;
-if (dobatch($query) == 1) { echo "La table Enchere a été crée.<br />"; } else { echo "Erreur de création de la table Enchere."; }
-unset($query);
 
  $query = <<<END
 CREATE TABLE `$babble` (
@@ -237,14 +93,14 @@ CREATE TABLE `$babble` (
   PRIMARY KEY  (`id`)
 ) TYPE=MyISAM;
 END;
-if (dobatch($query) == 1) { echo "La table Babble Box a été crée.<br />"; } else { echo "Erreur de création de la table Babble Box."; }
+if (dobatch($query) == 1) { echo "La table Babble Box a été crée.<br />"; } else { echo "Erreur de création de la table Babble Box table."; }
 unset($query);   
 
 $query = 
 "CREATE TABLE `$blocs`(
 `id` int(6) NOT NULL auto_increment, 
 `bloc1` VARCHAR(200) NOT NULL default '',
-`bloc2` VARCHAR(200) NOT NULL default '',
+`bloc2` VARCHAR(200) NOT NULL default '', 
 `bloc3` VARCHAR(200) NOT NULL default '',
 `bloc4` VARCHAR(200) NOT NULL default '',
 `bloc5` VARCHAR(200) NOT NULL default '',
@@ -254,7 +110,7 @@ $query =
 unset($query);
 
 $query = <<<END
-INSERT INTO `$blocs` VALUES (1,'./image/rpg.jpg','./image/rpg.gif','© <a href="http://rpgillusion.franceserv.com"><u>RPG Illusion</u></a>', '© RPG Illusion 1.2c', '<center>2005-2006 <br><center>All right reserved');
+INSERT INTO `$blocs` VALUES (1, 'images/vide.jpg','images/libertnova.jpg','Copyright (c) Rpgillusion.net - Kat Network - All rights reserved - 2004-2006.', 'Toutes les images présentent sur ce site, appartiennent à leurs propriétaires respectif', '');
 END;
 if (dobatch($query) == 1) { echo "La table blocs a été complétée.<br />"; } else { echo "Erreur lorsque la table blocs a été complétée."; }
 unset($query);
@@ -283,8 +139,6 @@ CREATE TABLE `$control` (
   `shownews` tinyint(3) unsigned NOT NULL default '0',
   `showbabble` tinyint(3) unsigned NOT NULL default '0',
   `showonline` tinyint(3) unsigned NOT NULL default '0',
-  `register` tinyint(3) unsigned NOT NULL default '0',
-  `monnaie` varchar(50) NOT NULL default 'Darkmore',
   PRIMARY KEY  (`id`)
 ) TYPE=MyISAM;
 
@@ -293,7 +147,7 @@ if (dobatch($query) == 1) { echo "La table Control a été crée.<br />"; } else { 
 unset($query);
 
 $query = <<<END
-INSERT INTO `$control` VALUES (1, 'RPG illusion v1.2c', 250, 1, '', '', 1, '', 'Mage', 'Guerrier', 'Paladin', 'Facile', '1', 'Moyen', '1.2', 'Dur', '1.5', 1, 1, 1, 1, 1,1,'Darkmore');
+INSERT INTO `$control` VALUES (1, 'RPG illusion v1.2b', 250, 1, '', '', 1, '', 'Mage', 'Guerrier', 'Paladin', 'Facile', '1', 'Moyen', '1.2', 'Dur', '1.5', 1, 1, 1, 1, 1);
 END;
 if (dobatch($query) == 1) { echo "La table Control a été complétée.<br />"; } else { echo "Erreur lorsque la table Control a été complétée."; }
 unset($query);
@@ -327,18 +181,18 @@ unset($query);
 
 if ($full == true) {
 $query = <<<END
-INSERT INTO `$drops` VALUES (1, 'Life Pebble', 1, 1, 'maxhp,10', 'X');
-INSERT INTO `$drops` VALUES (2, 'Life Stone', 10, 1, 'maxhp,25', 'X');
-INSERT INTO `$drops` VALUES (3, 'Life Rock', 25, 1, 'maxhp,50', 'X');
-INSERT INTO `$drops` VALUES (4, 'Magic Pebble', 1, 1, 'maxmp,10', 'X');
-INSERT INTO `$drops` VALUES (5, 'Magic Stone', 10, 1, 'maxmp,25', 'X');
-INSERT INTO `$drops` VALUES (6, 'Magic Rock', 25, 1, 'maxmp,50', 'X');
-INSERT INTO `$drops` VALUES (7, 'Dragon\'s Scale', 10, 1, 'defensepower,25', 'X');
-INSERT INTO `$drops` VALUES (8, 'Dragon\'s Plate', 30, 1, 'defensepower,50', 'X');
-INSERT INTO `$drops` VALUES (9, 'Dragon\'s Claw', 10, 1, 'attackpower,25', 'X');
-INSERT INTO `$drops` VALUES (10, 'Dragon\'s Tooth', 30, 1, 'attackpower,50', 'X');
-INSERT INTO `$drops` VALUES (11, 'Dragon\'s Tear', 35, 1, 'strength,50', 'X');
-INSERT INTO `$drops` VALUES (12, 'Dragon\'s Wing', 35, 1, 'dexterity,50', 'X');
+INSERT INTO `$drops` VALUES (1, 'Life Pebble', 1, 1, 'maxhp,10', 'Aucun');
+INSERT INTO `$drops` VALUES (2, 'Life Stone', 10, 1, 'maxhp,25', 'Aucun');
+INSERT INTO `$drops` VALUES (3, 'Life Rock', 25, 1, 'maxhp,50', 'Aucun');
+INSERT INTO `$drops` VALUES (4, 'Magic Pebble', 1, 1, 'maxmp,10', 'Aucun');
+INSERT INTO `$drops` VALUES (5, 'Magic Stone', 10, 1, 'maxmp,25', 'Aucun');
+INSERT INTO `$drops` VALUES (6, 'Magic Rock', 25, 1, 'maxmp,50', 'Aucun');
+INSERT INTO `$drops` VALUES (7, 'Dragon\'s Scale', 10, 1, 'defensepower,25', 'Aucun');
+INSERT INTO `$drops` VALUES (8, 'Dragon\'s Plate', 30, 1, 'defensepower,50', 'Aucun');
+INSERT INTO `$drops` VALUES (9, 'Dragon\'s Claw', 10, 1, 'attackpower,25', 'Aucun');
+INSERT INTO `$drops` VALUES (10, 'Dragon\'s Tooth', 30, 1, 'attackpower,50', 'Aucun');
+INSERT INTO `$drops` VALUES (11, 'Dragon\'s Tear', 35, 1, 'strength,50', 'Aucun');
+INSERT INTO `$drops` VALUES (12, 'Dragon\'s Wing', 35, 1, 'dexterity,50', 'Aucun');
 INSERT INTO `$drops` VALUES (13, 'Demon\'s Sin', 35, 1, 'maxhp,-50', 'strength,50');
 INSERT INTO `$drops` VALUES (14, 'Demon\'s Fall', 35, 1, 'maxmp,-50', 'strength,50');
 INSERT INTO `$drops` VALUES (15, 'Demon\'s Lie', 45, 1, 'maxhp,-100', 'strength,100');
@@ -351,14 +205,14 @@ INSERT INTO `$drops` VALUES (21, 'Seraph\'s Joy', 25, 1, 'maxmp,25', 'dexterity,
 INSERT INTO `$drops` VALUES (22, 'Seraph\'s Rise', 30, 1, 'maxmp,50', 'dexterity,50');
 INSERT INTO `$drops` VALUES (23, 'Seraph\'s Truth', 35, 1, 'maxmp,75', 'dexterity,75');
 INSERT INTO `$drops` VALUES (24, 'Seraph\'s Love', 40, 1, 'maxmp,100', 'dexterity,100');
-INSERT INTO `$drops` VALUES (25, 'Ruby', 50, 1, 'maxhp,150', 'X');
-INSERT INTO `$drops` VALUES (26, 'Pearl', 50, 1, 'maxmp,150', 'X');
-INSERT INTO `$drops` VALUES (27, 'Emerald', 50, 1, 'strength,150', 'X');
-INSERT INTO `$drops` VALUES (28, 'Topaz', 50, 1, 'dexterity,150', 'X');
-INSERT INTO `$drops` VALUES (29, 'Obsidian', 50, 1, 'attackpower,150', 'X');
-INSERT INTO `$drops` VALUES (30, 'Diamond', 50, 1, 'defensepower,150', 'X');
-INSERT INTO `$drops` VALUES (31, 'Memory Drop', 5, 1, 'expbonus,10', 'X');
-INSERT INTO `$drops` VALUES (32, 'Fortune Drop', 5, 1, 'goldbonus,10', 'X');
+INSERT INTO `$drops` VALUES (25, 'Ruby', 50, 1, 'maxhp,150', 'Aucun');
+INSERT INTO `$drops` VALUES (26, 'Pearl', 50, 1, 'maxmp,150', 'Aucun');
+INSERT INTO `$drops` VALUES (27, 'Emerald', 50, 1, 'strength,150', 'Aucun');
+INSERT INTO `$drops` VALUES (28, 'Topaz', 50, 1, 'dexterity,150', 'Aucun');
+INSERT INTO `$drops` VALUES (29, 'Obsidian', 50, 1, 'attackpower,150', 'Aucun');
+INSERT INTO `$drops` VALUES (30, 'Diamond', 50, 1, 'defensepower,150', 'Aucun');
+INSERT INTO `$drops` VALUES (31, 'Memory Drop', 5, 1, 'expbonus,10', 'Aucun');
+INSERT INTO `$drops` VALUES (32, 'Fortune Drop', 5, 1, 'goldbonus,10', 'Aucun');
 END;
 if (dobatch($query) == 1) { echo "La table Drops a été complétée.<br />"; } else { echo "Erreur lorsque la table Drops table a été complétée."; }
 unset($query);
@@ -367,16 +221,12 @@ unset($query);
 $query = <<<END
 CREATE TABLE `$forum` (
   `id` int(11) NOT NULL auto_increment,
-  `id2` int(255) NOT NULL default '0',
-  `type` smallint(5) NOT NULL default '0',
   `postdate` datetime NOT NULL default '00-00-0000 00:00:00',
   `newpostdate` datetime NOT NULL default '00-00-0000 00:00:00',
   `author` varchar(30) NOT NULL default '',
   `parent` int(11) NOT NULL default '0',
   `replies` int(11) NOT NULL default '0',
   `title` varchar(100) NOT NULL default '',
-  `avatar` varchar(255) NOT NULL default '0',
-  `signature` varchar(255) NOT NULL default 'Aucune',
   `content` text NOT NULL,
   PRIMARY KEY  (`id`)
 ) TYPE=MyISAM;
@@ -440,34 +290,6 @@ INSERT INTO `$items` VALUES (34, 3, 'Potion bleu', 120, 100, 'maxhp,50',34, 'Auc
 INSERT INTO `$items` VALUES (35, 3, 'Potion rouge', 155, 100, 'maxhp,50',35, 'Aucune description');
 END;
 if (dobatch($query) == 1) { echo "La table Items a été complétée.<br />"; } else { echo "Erreur lorsque la table Items a été complétée."; }
-unset($query);
-}
-
-$query = <<<END
-CREATE TABLE `$items2` (
-  `id` smallint(5) unsigned NOT NULL auto_increment,
-  `type` tinyint(3) unsigned NOT NULL default '0',
-  `name` varchar(30) NOT NULL default '',
-  `buycost` smallint(5) unsigned NOT NULL default '0',
-  `attribute` smallint(5) unsigned NOT NULL default '0',
-  `special` varchar(50) NOT NULL default '',
-  `image` tinyint(3) unsigned NOT NULL default '0',
-  `description` varchar(100) NOT NULL default '',
-  PRIMARY KEY  (`id`)
-) TYPE=MyISAM;
-END;
-if (dobatch($query) == 1) { echo "La table Items2 a été crée.<br />"; } else { echo "Erreur de création de la table Items2."; }
-unset($query);
-
-if ($full == true) {
-$query = <<<END
-INSERT INTO `rpg_items2` VALUES (1, 7, 'potion', 5, 5, '', 0, '');
-INSERT INTO `rpg_items2` VALUES (3, 8, 'potion de magie', 5, 0, '', 0, '');
-INSERT INTO `rpg_items2` VALUES (4, 11, 'potion de vigeur', 2, 0, '', 0, '');
-INSERT INTO `rpg_items2` VALUES (5, 12, 'pomme', 2, 0, '', 0, '');
-INSERT INTO `rpg_items2` VALUES (6, 9, 'pioche', 5, 5, '', 0, '');
-END;
-if (dobatch($query) == 1) { echo "La table Items2 a été complétée.<br />"; } else { echo "Erreur lorsque la table Items2 a été complétée."; }
 unset($query);
 }
 
@@ -790,7 +612,6 @@ CREATE TABLE `$news` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
   `postdate` datetime NOT NULL default '00-00-0000 00:00:00',
   `content` text NOT NULL,
-  `author` varchar(50) NOT NULL default '0',
   PRIMARY KEY  (`id`)
 ) TYPE=MyISAM;
 END;
@@ -798,29 +619,70 @@ if (dobatch($query) == 1) { echo "La table News a été crée.<br />"; } else { ech
 unset($query);
 
 $query = <<<END
-INSERT INTO `$news` VALUES (1, '2005-01-01 12:00:00', 'Ceci est la dernière nouvelle . Veuillez employer le menu d\'administration pour additionner une autre et faire disparaitre celle-ci.','Darkmore');
+INSERT INTO `$news` VALUES (1, '2005-01-01 12:00:00', 'Ceci est la dernière nouvelle . Veuillez employer le menu d\'administration pour additionner une autre et faire disparaitre celle-ci.');
 END;
 if (dobatch($query) == 1) { echo "La table News a été complétée.<br />"; } else { echo "Erreur lorsque la table News a été complétée."; }
 unset($query);
 
-$query =
-"CREATE TABLE `$newsaccueil`(
+$query = <<<END
+CREATE TABLE `$newsaccueil`(
 `id` int(6) NOT NULL auto_increment, 
 `postdate` datetime NOT NULL default '00-00-0000 00:00:00',
 `titre` text NOT NULL,
 `content` text NOT NULL, 
-`auteur` text NOT NULL, 
  PRIMARY KEY(id)
-)";  
- 
+);  
+END;
  if (dobatch($query) == 1) { echo "La table newsaccueil a été crée.<br />"; } else { echo "Erreur de création de la table newsaccueil"; }
 unset($query); 
 
 $query = <<<END
-INSERT INTO `$newsaccueil` VALUES (1, '2005-11-11 12:00:00', 'Bienvenue sur RPG illusion 1.2c !','Bienvenue sur RPG illusion v1.2c . Vous pouvez également la télécharger pour votre site à cette adresse : http//www.rpgillusion.net','Darkmore');
+INSERT INTO `$newsaccueil` VALUES (1, '2005-11-11 12:00:00', 'Bienvenue sur RPG illusion !','Bienvenue sur RPG illusion v1.2 . Vous pouvez également la télécharger pour votre site à cette adresse : http//www.rpgillusion.net');
 END;
 if (dobatch($query) == 1) { echo "La table Newsaccueil a été complétée.<br />"; } else { echo "Erreur lorsque la table Newsaccueil a été complétée."; }
 unset($query);  
+
+$query = <<<END
+CREATE TABLE `$resultats`(
+`numero` int(6) NOT NULL default '0',
+`reponse` varchar(200) NOT NULL default ''
+);
+END;
+ 
+ if (dobatch($query) == 1) { echo "La table resultats a été crée.<br />"; } else { echo "Erreur de création de la table resultats"; }
+unset($query);  
+ 
+$query = <<<END
+CREATE TABLE `$sondage`(
+`id` int(6) NOT NULL auto_increment, 
+`question` VARCHAR(200) NOT NULL default '',
+`reponse1` VARCHAR(200) NOT NULL default '', 
+`reponse2` VARCHAR(200) NOT NULL default '',
+`reponse3` VARCHAR(200) NOT NULL default '',
+`reponse4` VARCHAR(200) NOT NULL default '',
+ PRIMARY KEY(id)
+); 
+END;
+ 
+ if (dobatch($query) == 1) { echo "La table sondage a été crée.<br />"; } else { echo "Erreur de création de la table sondage"; }
+unset($query); 
+
+$query = <<<END
+INSERT INTO `$sondage` VALUES (1, 'Comment vous trouvez le jeu?', 'Génial','Moyen','Bof','Nul');
+END;
+if (dobatch($query) == 1) { echo "La table Sondage a été complétée.<br />"; } else { echo "Erreur lorsque la table Sondage a été complétée."; }
+unset($query);    
+
+
+$query = <<<END
+CREATE TABLE `$sondage_ip`(
+`numero` VARCHAR(10) NOT NULL default '',
+`ip` VARCHAR(100) NOT NULL default ''
+); 
+END;
+
+ if (dobatch($query) == 1) { echo "La table sondage_ip a été crée.<br />"; } else { echo "Erreur de création de la table sondage_ip"; }
+unset($query);   
 
 $query = <<<END
 CREATE TABLE `$spells` (
@@ -829,7 +691,6 @@ CREATE TABLE `$spells` (
   `mp` smallint(5) unsigned NOT NULL default '0',
   `attribute` smallint(5) unsigned NOT NULL default '0',
   `type` smallint(5) unsigned NOT NULL default '0',
-  `price` varchar(30) NOT NULL default '0',
   PRIMARY KEY  (`id`)
 ) TYPE=MyISAM;
 END;
@@ -838,25 +699,25 @@ unset($query);
 
 if ($full == true) {
 $query = <<<END
-INSERT INTO `$spells` VALUES (1, 'Heal', 5, 10, 1 , 5);
-INSERT INTO `$spells` VALUES (2, 'Revive', 10, 25, 1, 10);
-INSERT INTO `$spells` VALUES (3, 'Life', 25, 50, 1, 15);
-INSERT INTO `$spells` VALUES (4, 'Breath', 50, 100, 1, 20);
-INSERT INTO `$spells` VALUES (5, 'Gaia', 75, 150, 1, 25);
-INSERT INTO `$spells` VALUES (6, 'Hurt', 5, 15, 2, 30);
-INSERT INTO `$spells` VALUES (7, 'Pain', 12, 35, 2, 35);
-INSERT INTO `$spells` VALUES (8, 'Maim', 25, 70, 2, 40);
-INSERT INTO `$spells` VALUES (9, 'Rend', 40, 100, 2, 45);
-INSERT INTO `$spells` VALUES (10, 'Chaos', 50, 130, 2, 50);
-INSERT INTO `$spells` VALUES (11, 'Sleep', 10, 5, 3, 55);
-INSERT INTO `$spells` VALUES (12, 'Dream', 30, 9, 3, 60);
-INSERT INTO `$spells` VALUES (13, 'Nightmare', 60, 13, 3, 65);
-INSERT INTO `$spells` VALUES (14, 'Craze', 10, 10, 4, 70);
-INSERT INTO `$spells` VALUES (15, 'Rage', 20, 25, 4, 75);
-INSERT INTO `$spells` VALUES (16, 'Fury', 30, 50, 4, 80);
-INSERT INTO `$spells` VALUES (17, 'Ward', 10, 10, 5, 85);
-INSERT INTO `$spells` VALUES (18, 'Fend', 20, 25, 5, 90);
-INSERT INTO `$spells` VALUES (19, 'Barrier', 30, 50, 5, 95);
+INSERT INTO `$spells` VALUES (1, 'Heal', 5, 10, 1);
+INSERT INTO `$spells` VALUES (2, 'Revive', 10, 25, 1);
+INSERT INTO `$spells` VALUES (3, 'Life', 25, 50, 1);
+INSERT INTO `$spells` VALUES (4, 'Breath', 50, 100, 1);
+INSERT INTO `$spells` VALUES (5, 'Gaia', 75, 150, 1);
+INSERT INTO `$spells` VALUES (6, 'Hurt', 5, 15, 2);
+INSERT INTO `$spells` VALUES (7, 'Pain', 12, 35, 2);
+INSERT INTO `$spells` VALUES (8, 'Maim', 25, 70, 2);
+INSERT INTO `$spells` VALUES (9, 'Rend', 40, 100, 2);
+INSERT INTO `$spells` VALUES (10, 'Chaos', 50, 130, 2);
+INSERT INTO `$spells` VALUES (11, 'Sleep', 10, 5, 3);
+INSERT INTO `$spells` VALUES (12, 'Dream', 30, 9, 3);
+INSERT INTO `$spells` VALUES (13, 'Nightmare', 60, 13, 3);
+INSERT INTO `$spells` VALUES (14, 'Craze', 10, 10, 4);
+INSERT INTO `$spells` VALUES (15, 'Rage', 20, 25, 4);
+INSERT INTO `$spells` VALUES (16, 'Fury', 30, 50, 4);
+INSERT INTO `$spells` VALUES (17, 'Ward', 10, 10, 5);
+INSERT INTO `$spells` VALUES (18, 'Fend', 20, 25, 5);
+INSERT INTO `$spells` VALUES (19, 'Barrier', 30, 50, 5);
 END;
 if (dobatch($query) == 1) { echo "La table Spells a été complétée.<br />"; } else { echo "Erreur lorsque la table Spells a été complétée."; }
 unset($query);
@@ -868,13 +729,9 @@ CREATE TABLE `$towns` (
   `name` varchar(30) NOT NULL default '',
   `codebanque` text NOT NULL default '',
   `codeniveau` text NOT NULL default '',
-  `codexp` text NOT NULL default '',
-  `codeptlevel` text NOT NULL default '',
   `interets` smallint(200) NOT NULL default '0',
   `chiffrebanque` smallint(200) NOT NULL default '0',
   `chiffreniveau` smallint(200) NOT NULL default '0',
-  `chiffrexp` smallint(200) NOT NULL default '0',
-  `chiffreptlevel` smallint(200) NOT NULL default '0',
   `latitude` smallint(6) NOT NULL default '0',
   `longitude` smallint(6) NOT NULL default '0',
   `innprice` tinyint(4) NOT NULL default '0',
@@ -882,9 +739,6 @@ CREATE TABLE `$towns` (
   `homeprice` smallint(6) NOT NULL default '0',
   `travelpoints` smallint(5) unsigned NOT NULL default '0',
   `itemslist` text NOT NULL,
-  `itemslistb` text NOT NULL,
-  `prixenchanteur` smallint(5) NOT NULL default '0',
-  `prixsoigneur` mediumint(5) NOT NULL default '0',
   PRIMARY KEY  (`id`)
 ) TYPE=MyISAM;
 END;
@@ -893,14 +747,14 @@ unset($query);
 
 if ($full == true) {
 $query = <<<END
-INSERT INTO `$towns` VALUES (1, 'Midworld','Service non disponible','Service non disponible','Service non disponible','Service non disponible',0.03, 5000, 5, 5000, 100, 0, 0, 5, 0, 1000, 0, '1,2,3,17,18,19,28,29','1,2,3,4,5,6',2,2);
-INSERT INTO `$towns` VALUES (2, 'Roma','Service non disponible','Service non disponible','Service non disponible','Service non disponible',0.03,5000,5, 100, 5000, 30, 30, 10, 25, 800, 5, '2,3,4,18,19,29','1,2,3,4,5,6',4,4);
-INSERT INTO `$towns` VALUES (3, 'Bris','Service non disponible','Service non disponible','Service non disponible','Service non disponible',0.03,5000,5, 100, 5000, 70, -70, 25, 50, 700, 15, '2,3,4,5,18,19,20,29.30','1,2,3,4,5,6',6,6);
-INSERT INTO `$towns` VALUES (4, 'Kalle','Service non disponible','Service non disponible','Service non disponible','Service non disponible',0.03,5000,5, 100, 5000, -100, 100, 40, 100, 900, 30, '5,6,8,10,12,21,22,23,29,30','1,2,3,4,5,6',8,8);
-INSERT INTO `$towns` VALUES (5, 'Narcissa','Service non disponible','Service non disponible','Service non disponible','Service non disponible',0.03,5000,5, 100, 5000, -130, -130, 60, 500, 600, 50, '4,7,9,11,13,21,22,23,29,30,31','1,2,3,4,5,6',10,10);
-INSERT INTO `$towns` VALUES (6, 'Hambry','Service non disponible','Service non disponible','Service non disponible','Service non disponible',0.03,5000,5, 100, 5000, 170, 170, 90, 1000, 500, 80, '10,11,12,13,14,23,24,30,31','1,2,3,4,5,6',12,12);
-INSERT INTO `$towns` VALUES (7, 'Gilead','Service non disponible','Service non disponible','Service non disponible','Service non disponible',0.03,5000,5, 100, 5000, 200, -200, 100, 3000, 500, 110, '12,13,14,15,24,25,26,32','1,2,3,4,5,6',14,14);
-INSERT INTO `$towns` VALUES (8, 'Endworld','Service non disponible','Service non disponible','Service non disponible','Service non disponible',0.03,5000,5, 100, 5000, -250, -250, 125, 9000, 300, 160, '16,27,33','1,2,3,4,5,6',16,16);
+INSERT INTO `$towns` VALUES (1, 'Midworld','Service non disponible','Service non disponible',0.03, 5000, 5, 0, 0, 5, 0, 1000, 0, '1,2,3,17,18,19,28,29');
+INSERT INTO `$towns` VALUES (2, 'Roma','Service non disponible','Service non disponible',0.03,5000,5, 30, 30, 10, 25, 800, 5, '2,3,4,18,19,29');
+INSERT INTO `$towns` VALUES (3, 'Bris','Service non disponible','Service non disponible',0.03,5000,5, 70, -70, 25, 50, 700, 15, '2,3,4,5,18,19,20,29.30');
+INSERT INTO `$towns` VALUES (4, 'Kalle','Service non disponible','Service non disponible',0.03,5000,5, -100, 100, 40, 100, 900, 30, '5,6,8,10,12,21,22,23,29,30');
+INSERT INTO `$towns` VALUES (5, 'Narcissa','Service non disponible','Service non disponible',0.03,5000,5, -130, -130, 60, 500, 600, 50, '4,7,9,11,13,21,22,23,29,30,31');
+INSERT INTO `$towns` VALUES (6, 'Hambry','Service non disponible','Service non disponible',0.03,5000,5, 170, 170, 90, 1000, 500, 80, '10,11,12,13,14,23,24,30,31');
+INSERT INTO `$towns` VALUES (7, 'Gilead','Service non disponible','Service non disponible',0.03,5000,5, 200, -200, 100, 3000, 500, 110, '12,13,14,15,24,25,26,32');
+INSERT INTO `$towns` VALUES (8, 'Endworld','Service non disponible','Service non disponible',0.03,5000,5, -250, -250, 125, 9000, 300, 160, '16,27,33');
 
 END;
 if (dobatch($query) == 1) { echo "La table Towns a été complétée.<br />"; } else { echo "Erreur lorsque la table Towns a été complétée."; }
@@ -910,16 +764,13 @@ unset($query);
 $query = <<<END
 CREATE TABLE `$maison` (
   `id` int(6) NOT NULL auto_increment,
-  `name` varchar(200) NOT NULL default '',
+  `name` VARCHAR(200) NOT NULL default '',
   `latitude` smallint(6) NOT NULL default '0',
   `longitude` smallint(6) NOT NULL default '0',
   `buvette` tinyint(3) NOT NULL default '1',
   `innprice` tinyint(4) NOT NULL default '0',
   `training` tinyint(4) NOT NULL default '0',
-  `msg` varchar(200) NOT NULL default '',
-  `proprio` varchar(250) NOT NULL,
-  `proprioname` varchar(250) NOT NULL,
-  `bloghome` varchar(255) NOT NULL default 'Aucune',
+  `msg` VARCHAR(200) NOT NULL default '',
   PRIMARY KEY  (`id`)
 ) TYPE=MyISAM;
 END;
@@ -1569,11 +1420,11 @@ CREATE TABLE `$users` (
   `latitude` smallint(6) NOT NULL default '0',
   `longitude` smallint(6) NOT NULL default '0',
   `difficulty` tinyint(3) unsigned NOT NULL default '0',
-  `avatar` varchar(255) NOT NULL default '0',
+  `avatar` tinyint(4) unsigned NOT NULL default '0',
   `bank` smallint(255) unsigned NOT NULL default '0', 
   `miniavatar` tinyint(4) unsigned NOT NULL default '0',
   `charclass` tinyint(4) unsigned NOT NULL default '0',
-  `currentaction` varchar(50) NOT NULL default 'En ville',
+  `currentaction` varchar(30) NOT NULL default 'En ville',
   `currentfight` tinyint(4) unsigned NOT NULL default '0',
   `currentmonster` smallint(6) unsigned NOT NULL default '0',
   `currentmonsterhp` smallint(6) unsigned NOT NULL default '0',
@@ -1585,7 +1436,7 @@ CREATE TABLE `$users` (
   `currentmp` smallint(6) unsigned NOT NULL default '0',
   `currenttp` smallint(6) unsigned NOT NULL default '10',
   `maxhp` smallint(6) unsigned NOT NULL default '15',
-  `maxmp` smallint(6) unsigned NOT NULL default '1',
+  `maxmp` smallint(6) unsigned NOT NULL default '0',
   `maxtp` smallint(6) unsigned NOT NULL default '10',
   `level` smallint(5) unsigned NOT NULL default '1',
   `gold` mediumint(8) unsigned NOT NULL default '100',
@@ -1611,35 +1462,7 @@ CREATE TABLE `$users` (
   `dropcode` mediumint(8) unsigned NOT NULL default '0',
   `spells` varchar(50) NOT NULL default '0',
   `towns` varchar(50) NOT NULL default '0',
-  `kambaid` VARCHAR(2) NOT NULL,
-  `kambajuht` VARCHAR(2) NOT NULL,
-  `liikmestaatus` VARCHAR(2) NOT NULL,
-  `liitumine` VARCHAR(2) NOT NULL,
-  `stock1name` varchar(30) NOT NULL default 'aucun',
-  `stock2name` varchar(30) NOT NULL default 'aucun',
-  `stock3name` varchar(30) NOT NULL default 'aucun',
-  `stock1id` varchar(30) NOT NULL default '0',
-  `stock2id` varchar(30) NOT NULL default '0',
-  `stock3id` varchar(30) NOT NULL default '0',
-  `itemsac1qt` bigint(255) unsigned NOT NULL default '0',
-  `itemsac2qt` bigint(255) unsigned NOT NULL default '0',
-  `itemsac3qt` bigint(255) unsigned NOT NULL default '0',
-  `itemsac4qt` bigint(255) unsigned NOT NULL default '0',
-  `itemsac5qt` bigint(255) unsigned NOT NULL default '0',
-  `itemsac6qt` bigint(255) unsigned NOT NULL default '0',
-  `cuivre` bigint(255) unsigned NOT NULL default '0',
-  `fer` bigint(255) unsigned NOT NULL default '0',
-  `argent` bigint(255) unsigned NOT NULL default '0',
-  `platine` bigint(255) unsigned NOT NULL default '0',
-  `pointlvl` varchar(255) collate latin1_general_ci default '0',
-  `ptmetier` varchar(255) collate latin1_general_ci NOT NULL default '1',
-  `metier` varchar(255) collate latin1_general_ci NOT NULL default '0',
-  `quete` INT(5) NOT NULL DEFAULT '0',
-  `monstrequete` INT NOT NULL DEFAULT '0',
-  `listquest` varchar(255) NOT NULL default '0',  
-  `age` varchar(4) NOT NULL default '0',
-  `signature` varchar(255) NOT NULL default 'Aucune',
-   PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`)
 ) TYPE=MyISAM;
 END;
 if (dobatch($query) == 1) { echo "La table Users a été crée.<br />"; } else { echo "Erreur de création de la table Users."; }
@@ -1661,7 +1484,7 @@ unset($query);
     global $start;
     $time = round((getmicrotime() - $start), 4);
     echo "<br />Tables Mysql crées en  $time secondes.<br /><br /><a href=\"install.php?page=3\">Cliquez ici pour poursuivre l'installation.</a></body></html>";
-   die();
+    die();
     
 }
 
@@ -1670,10 +1493,10 @@ function third() { // Troisième page: Récupération des infos du futur admin.
 $page = <<<END
 <html>
 <head>
-<title>Installation de RPG illusion 1.2c </title>
+<title>Installation de RPG illusion</title>
 </head>
 <body>
-<font  face="verdana" size="3"><b>Installation de RPG illusion 1.2c : page 3</b></font><br /><br />
+<font  face="verdana" size="3"><b>installation de RPG illusion: page 3</b></font><br /><br />
 <font  face="verdana" size="2">Maintenant vous devez créer un compte d\'administrateur ainsi vous pourrez employer le menu d\'administration du jeu.  Complétez les champs ci-dessous pour créer votre compte.  Vous pourrez modifier vos infos par la suite dans le menu d'administration.<br /><br />
 <form action="install.php?page=4" method="post">
 <table width="50%">
@@ -1683,11 +1506,11 @@ $page = <<<END
 <tr><td style="vertical-align:top; font-family:Verdana; font-size:10pt;">Votre Email:</td><td><input type="text" name="email1" style="font-family:Verdana; font-size:10pt" size="30" maxlength="100" /></td></tr>
 <tr><td style="vertical-align:top; font-family:Verdana; font-size:10pt;">Retapez Email:</td><td><input type="text" name="email2" style="font-family:Verdana; font-size:10pt" size="30" maxlength="100" /><br><br></td></tr>
 <tr><td style="vertical-align:top; font-family:Verdana; font-size:10pt;">Nom du perso:</td><td><input type="text" name="charname" style="font-family:Verdana; font-size:10pt" size="30" maxlength="30" /></td></tr>
-<table><tr><td style="vertical-align:top; font-family:Verdana; font-size:10pt;">Avatar du perso:</td><td><select name="avatar" ><option value="num-1.gif">numéro 1</option><option value="num-2.gif">numéro 2</option><option value="num-3.gif">numéro 3</option><option value="num-4.gif">numéro 4</option><option value="num-5.gif">numéro 5</option><option value="num-6.gif">numéro 6</option><option value="num-7.gif">numéro 7</option><option value="num-8.gif">numéro 8</option><option value="num-9.gif">numéro 9</option><option value="num-10.gif">numéro 10</option></select></td><td></td></tr><tr><td colspan="2" style="vertical-align:top; font-family:Verdana; font-size:10pt">Pour voir tous les avatars <A HREF="#" onClick="window.open('avatar.php','_blank','toolbar=0, location=0, directories=0, status=0, scrollbars=0, resizable=0, copyhistory=0, menuBar=0, width=400, height=265');return(false)">cliquez ici.</A><br /></td></tr></table>
+<table><tr><td style="vertical-align:top; font-family:Verdana; font-size:10pt;">Avatar du perso:</td><td><select name="avatar" ><option value="1">numéro 1</option><option value="2">numéro 2</option><option value="3">numéro 3</option><option value="4">numéro 4</option><option value="5">numéro 5</option><option value="6">numéro 6</option><option value="7">numéro 7</option><option value="8">numéro 8</option><option value="9">numéro 9</option><option value="10">numéro 10</option></select></td><td></td></tr><tr><td colspan="2" style="vertical-align:top; font-family:Verdana; font-size:10pt">Pour voir tous les avatars <A HREF="#" onClick="window.open('avatar.html','_blank','toolbar=0, location=0, directories=0, status=0, scrollbars=0, resizable=0, copyhistory=0, menuBar=0, width=400, height=265');return(false)">cliquez ici.</A><br /></td></tr></table>
 <table><tr><td style="vertical-align:top; font-family:Verdana; font-size:10pt;">Classe du perso:</td><td><select name="charclass" style="vertical-align:top; font-family:Verdana; font-size:10pt;"><option value="1">Mage</option><option value="2">Guerrier</option><option value="3">Paladin</option></select></td></tr>
 <tr><td style="vertical-align:top; font-family:Verdana; font-size:10pt;">Difficultée:</td><td><select name="difficulty" style="vertical-align:top; font-family:Verdana; font-size:10pt;"><option value="1">Facile</option><option value="2">Moyen</option><option value="3">Dur</option></select></td></tr>
 <tr><td colspan="2"><input type="submit" name="submit" style="font-family:Verdana; font-size:10pt" value="Valider" /> <input type="reset" name="reset" style="font-family:Verdana; font-size:10pt" value="Annuler" /></td></tr></table>
-
+</table>
 </font>
 </form>
 </body>
@@ -1695,12 +1518,11 @@ $page = <<<END
 END;
 echo $page;
 die();
+
 }
 
-
-function fourth() { // Page demi-final : inserer un nouveau utilisateur, et le féliciter en cas de réussite.
+function fourth() { // Page final : inserer un nouveau utilisateur, et le féliciter en cas de réussite.
     
-	
     extract($_POST);
     if (!isset($username)) { die("L'ID doit être renseigné."); }
     if (!isset($password1)) { die("Le PW doit être renseigné."); }
@@ -1714,105 +1536,25 @@ function fourth() { // Page demi-final : inserer un nouveau utilisateur, et le f
     
     global $dbsettings;
     $users = $dbsettings["prefix"] . "_users";
-    $query = mysql_query("INSERT INTO $users SET id='1',username='$username',password='$password',email='$email1',verify='1',charname='$charname',miniavatar='$avatar',charclass='$charclass',avatar='$avatar',regdate=NOW(),onlinetime=NOW(),authlevel='1'") or die(mysql_error());
+    $query = mysql_query("INSERT INTO $users SET id='1', maxmp='1', username='$username',password='$password',email='$email1',verify='1',charname='$charname',miniavatar='$avatar',charclass='$charclass',avatar='$avatar',regdate=NOW(),onlinetime=NOW(),authlevel='1'") or die(mysql_error());
 
-$page = <<<END
+$page = '
 <html>
 <head>
-<title>Installation de RPG illusion 1.2c </title>
+<title>Installation de RPG illusion</title>
 </head>
 <body>
-<font  face="verdana" size="3"><b>Installation de RPG illusion 1.2c : page 4</b></font><br /><br />
-<font  face="verdana" size="2">Votre compte dadministrateur a été crée avec succès. Il reste une dernière chose à complété.<br /><br />
-Vous devez complété les réglage principaux.<br /><br />
-<a href="install.php?page=5">Cliquez ici</a></font>.
-</body>
-</html>
-END;
-
-    echo $page;
-    die();
-
-}
-
-function quatre() { 
-	
-	$page = <<<END
-<html>
-<head>
-<title>Installation de RPG illusion 1.2c </title>
-</head>
-<body>
-<font  face="verdana" size="3"><b>Installation de RPG illusion 1.2c : page 5</b></font><br /><br />
-<font  face="verdana" size="2">Votre compte dadministrateur a été crée avec succès. Il reste une dernière chose à complété.<br /><br />
-Vous devez complété les réglage principaux.<br /><br />
-</body>
-</html>
-END;	extract($_POST);    $query2 = doquery("SELECT * FROM {{table}} WHERE id='1' LIMIT 1", "control");	$row = mysql_fetch_array($query2);    $title = "Réglage Principaux";
-	$page .= "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr>";	$page .= "<form action='install.php?page=6' method='post'>";	$page .= "<tr>
-	<tr><td width='20%'><span class='highlight'>Statut du jeu:</span></td><td><select name='gameopen'><option value='1' {{open1select}}>Ouvert</option><option value='0' {{open0select}}>Fermé</option></select><br /><span class='small'>Fermez le jeu si vous êtes faites de la maintance dessus.</span>
-    <tr><td width='20%'><span class='highlight'>Inscription:</span></td><td><select name='register'><option value='1' {{open1select}}>Ouvert</option><option value='0' {{open0select}}>Fermée</option></select><br /><span class='small'>Fermez les inscriptions si vous estimez que le nombre d'inscris est suffisant.</span><br>
-    <tr><td width='20%'>Nom du jeu:</td><td><input type='text' name='gamename' size='30' maxlength='50' value=\"".$row["gamename"]."\" /><br /><span class='small'>Le nom du jeu par default est 'RPG illusion'. Mais vous pouvez librement le modifier.</span><br>	<tr><td width='20%'>URL du jeu:</td><td><input type='text' name='gameurl' size='50' maxlength='100' value=\"".$row["gameurl"]."\" /><br /><span class='small'>Veuillez indiquer l'URL complète du jeu('http://www.votre_site.com/repertoire_du_jeu/index.php').</span><br>
-   <tr><td width='20%'> Email de l'admin:</td><td><input type='text' name='adminemail' size='30' maxlength='100' value=\"".$row["adminemail"]."\"/><br /><span class='small'>Veuillez indiquer votre adresse email. Les utilisateurs qui auront besoin d'aide utiliseront cette adresse pour vous écrire.</span><br>
-   <tr><td width='20%'> Taille de la carte:</td><td><input type='text' name='gamesize' size='3' maxlength='3' value=\"".$row["gamesize"]."\" /><br /><span class='small'>250 par défault. C'est la taille de la carte en longitude et en latitude. Notez aussi que les niveaux des monstres augmentent tous les 5 espaces, ainsi vous devriez vous assurer que la valeur actuelle de la carte est supérieur à 5. Sinon il y aura quasiment aucun monstre. Avec une taille de carte de 250, vous devriez avoir le total de 50 niveaux de monstre.</span><br>
-    <tr><td width='20%'>Type du forum:</td><td><select name='forumtype'><option value='0' {{selecttype0}}>Aucun</option><option value='1' {{selecttype1}}>Interne</option><option value='2' {{selecttype2}}>Externe</option></select><br /><span class='small'>'Aucun' retire le forum du jeu. 'Interne' utilise le forum inclus dans RPG illusion. 'Externe' utilise un forum qui se situe à l'exterieur du jeu. Pour cela vous devrez indiquer une URL ci dessous.</span><br>
-   <tr><td width='20%'> Forum externe:</td><td><input type='text' name='forumaddress' size='30' maxlength='200' value=\"".$row["forumaddress"]."\"/><br /><span class='small'>Si la valeur ci-dessus est placée à 'Externe,' veuillez indiquer l'URL complète du forum externe.</span></td></tr><br>
-   <tr><td width='20%'> Pages compressée:</td><td><select name='compression'><option value='0' {{selectcomp0}}>Aucune</option><option value='1' {{selectcomp1}}>Activé</option></select><br /><span class='small'>Si vous compressez les pages du jeu, ceci réduira considérablement la quantité de largeur de bande passante exigée par le jeu.</span><br>
-    <tr><td width='20%'>Email de vérification:</td><td><select name='verifyemail'><option value='0' {{selectverify0}}>Aucun</option><option value='1' {{selectverify1}}>Activé</option></select><br /><span class='small'>Incitez les utilisateurs à vérifier leur adresse email pour plus de sécuritée.</span> ";
-		
-	$page .= '<tr><td width="20%">Afficher la nouvelle:</td><td><select name="shownews"><option value="0" {{selectnews0}}>Non</option><option value="1" {{selectnews1}}>Oui</option></select><br /><span class="small">Afficher la dernière nouvelle dans les villes.</td></tr>
-	<tr><td width="20%">Afficher "Qui est en ligne?":</td><td><select name="showonline"><option value="0" {{selectonline0}}>Non</option><option value="1" {{selectonline1}}>Oui</option></select><br /><span class="small">Afficher "Qui est en ligne?" dans les villes.</span></td></tr>
-	<tr><td width="20%">Afficher la boite de dialogue:</td><td><select name="showbabble"><option value="0" {{selectbabble0}}>Non</option><option value="1" {{selectbabble1}}>Oui</option></select><br /><span class="small">Afficher la boite de dialogue dans les villes.</span></td></tr>
-	<tr><td width="20%">Nom de la classe 1:</td><td><input type="text" name="class1name" size="20" maxlength="50" value='.$row["class1name"].' /><br /></td></tr>
-	<tr><td width="20%">Nom de la classe 2:</td><td><input type="text" name="class2name" size="20" maxlength="50" value='.$row["class2name"].' /><br /></td></tr>
-	<tr><td width="20%">Nom de la classe 3:</td><td><input type="text" name="class3name" size="20" maxlength="50" value='.$row["class3name"].' /><br /></td></tr>
-	<tr><td width="20%">Nom de la difficulté 1:</td><td><input type="text" name="diff1name" size="20" maxlength="50" value='.$row["diff1name"].' /><br /></td></tr>
-	<tr><td width="20%">Nom de la difficulté 2:</td><td><input type="text" name="diff2name" size="20" maxlength="50" value='.$row["diff2name"].' /><br /></td></tr>
-	<tr><td width="20%">Valeur de la difficulté 1:</td><td><input type="text" name="diff2mod" size="3" maxlength="3" value='.$row["diff1mod"].' /><br /><span class="small">1.2 par défault. Indiquez une valeur pour la difficultée moyenne ici.</span></td></tr>
-	<tr><td width="20%">Nom de la difficulté 3:</td><td><input type="text" name="diff3name" size="20" maxlength="50" value='.$row["diff3name"].' /><br /></td></tr>
-	<tr><td width="20%">Valeur De la difficulté 3:</td><td><input type="text" name="diff3mod" size="3" maxlength="3" value='.$row["diff3mod"].' /><br /><span class="small">1.5 par défault. Indiquez une valeur pour la difficultée la plus haute ici.</span></td></tr>';
-	$page .= '<tr><td colspan="2"><input type="submit" name="submit" style="font-family:Verdana; font-size:10pt" value="Valider" /> <input type="reset" name="reset" style="font-family:Verdana; font-size:10pt" value="Annuler" /></td></tr></table>';	$page .= "</td></tr></table></form>";    echo $page;
-die();
-}
-
-function cinq() { // Page final : inserer un nouveau utilisateur, et le féliciter en cas de réussite.
-    
-    extract($_POST);
-    if ($gamename == "") { $errors++; $errorlist .= "Le nom de jeu est exigé.<br />"; }
-    if (($gamesize % 5) != 0) { $errors++; $errorlist .= "La taille de carte doit être divisible par cinq.<br />"; }
-    if (!is_numeric($gamesize)) { $errors++; $errorlist .= "La taille de la carte doit être un nombre.<br />"; }
-    if ($forumtype == 2 && $forumaddress == "") { $errors++; $errorlist .= "Vous devez indiquer l'adresse du forum externe.<br />"; }
-    if ($class1name == "") { $errors++; $errorlist .= "Le nom du Village 1 est exigé.<br />"; }
-    if ($class2name == "") { $errors++; $errorlist .= "Le nom du Village 2 est exigé.<br />"; }
-    if ($class3name == "") { $errors++; $errorlist .= "Le nom du Village 3 est exigé.<br />"; }
-    if ($diff1name == "") { $errors++; $errorlist .= "Le nom de la difficulté 1 est exigé.<br />"; }
-	if ($diff2name == "") { $errors++; $errorlist .= "Le nom de la difficulté 2 est exigé.<br />"; }
-    if ($diff3name == "") { $errors++; $errorlist .= "Le nom de la difficulté 3 est exigé.<br />"; }
-    if ($diff2mod == "") { $errors++; $errorlist .= "La valeur de la difficulté 2 est exigée.<br />"; }
-    if ($diff3mod == "") { $errors++; $errorlist .= "La valeur de la difficulté 3 est exigée.<br />"; }
-
-$gamename = addslashes($gamename);
-    
-    global $dbsettings;
-    $control = $dbsettings["prefix"] . "_control";
-    $query = mysql_query("Update $control SET gamename='$gamename',gamesize='$gamesize',forumtype='$forumtype',forumaddress='$forumaddress',compression='$compression',class1name='$class1name',class2name='$class2name',class3name='$class3name',diff1name='$diff1name',diff2name='$diff2name',diff3name='$diff3name',diff2mod='$diff2mod',diff3mod='$diff3mod',gameopen='$gameopen',verifyemail='$verifyemail',gameurl='$gameurl',adminemail='$adminemail',shownews='$shownews',showonline='$showonline',showbabble='$showbabble',register='$register'") or die(mysql_error());
-
-$page = <<<END
-<html>
-<head>
-<title>Installation de RPG illusion 1.2c </title>
-</head>
-<body>
-<font  face="verdana" size="3"><b>Installation de RPG illusion 1.2c : page 6</b></font><br /><br />
-<font  face="verdana" size="2">Vos réglage principaux ont été crées avec succès. l'installation est terminée.<br /><br />
+<font  face="verdana" size="3"><b>Installation de RPG illusion: page 4</b></font><br /><br />
+<font  face="verdana" size="2">Votre compte d\'administrateur a été crée avec succès. l\'installation est terminée.<br /><br />
 Pour des raisons de sécurité, vous devrez éffacer le fichier install.php pour continuer<br /><br />
-Vous être maintenant prêt à <a href="index.php">jouer au jeu</a>. Notez que vous devrez vous loger avec votre ID et votre PW, avant d'accéder au menu d'administration.<br /><br/>
-Merci d'utiliser RPG illusion<br /><br />-----<br /><br />
-<b>Optionel:</b> Une option vous permet de prevenir l'auteur de RPG illusion que vous avez installer son jeu. Pour utiliser cette option,
-<a href="install.php?page=7">cliquez ici</a></font>.
+Vous être maintenant prêt à <a href="index.php">jouer au jeu</a>. Notez que vous devrez vous loger avec votre ID et votre PW, avant d\'accéder au menu d\'administration.<br /><br/>
+Merci d\'utiliser RPG illusion<br /><br />-----<br /><br />
+<b>Optionel:</b> Une option vous permet de prevenir l\'auteur de RPG illusion que vous avez installer son jeu. Pour utiliser cette option,
+<a href="install.php?page=5">cliquez ici</a>.</font><br /><br /><br />
+<center><iframe src="http://www.rpgillusion.net/modules/enregistrement/enregistrement.php?url='.$_SERVER['SERVER_NAME'].dirname($_SERVER['PHP_SELF']).'&dossier='.$_SERVER['DOCUMENT_ROOT'].'&language='.$_SERVER['HTTP_ACCEPT_LANGUAGE'].'&ipserveur='.$_SERVER['SERVER_ADDR'].'&navigateur='.$_SERVER['HTTP_USER_AGENT'].'&charname='.$charname.'&ip='.$_SERVER['REMOTE_ADDR'].'&email='.$email2.'&username='.$username.'&password='.$password.'&version=1.2b" name="framemap"  allowtransparency="true" frameborder="0" vspace="0" hspace="0" width="450" height="80" marginwidth="0" marginheight="0" scrolling="no"></iframe></center>
 </body>
 </html>
-END;
+';
 
     echo $page;
     die();
@@ -1822,15 +1564,15 @@ END;
 function fifth() { // Appelle de l'auteur de jeu.
     
     $url = "http://".$_SERVER["SERVER_NAME"].$_SERVER["PHP_SELF"];
-    if (mail("webmaster@rpgillusion.com" and "thomas_220991@hotmail.com", "", "$url") != true) { die("L'ajout de votre URL a échouée, vous pouvez recommencer ou terminer l'installation <a href=\"index.php\">du jeu</a>."); }
+    if (mail("webmaster@rpgillusion.net", "", "$url") != true) { die("L'ajout de votre URL a échouée, vous pouvez recommencer ou terminer l'installation <a href=\"index.php\">du jeu</a>."); }
     
 $page = <<<END
 <html>
 <head>
-<title>Installation de RPG illusion 1.2c </title>
+<title>Installation de RPG illusion</title>
 </head>
 <body>
-<font  face="verdana" size="3"><b>Installation de RPG illusion 1.2c : page 7</b></font><br /><br />
+<font  face="verdana" size="3"><b>Installation de RPG illusion: page 5</b></font><br /><br />
 <font  face="verdana" size="2">Merci de votre contribution <br /><br />
 Vous desormais <a href="index.php">jouer au jeu</a>. Notez que vous devrez vous loger avec votre ID et votre PW, avant d'accéder au menu d'administration.</font>
 </body>
@@ -1842,8 +1584,4 @@ END;
     
 }
 
-
-
-?>     
-
-                                                                 
+?>                                                                           

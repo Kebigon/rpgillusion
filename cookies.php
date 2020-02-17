@@ -1,5 +1,6 @@
 <?php // cookies.php :: Création et utilisation du cookies de session.
 
+header('P3P: CP="NON ADM DEV PSAi COM NAV OUR OTRo STP IND DEM"');
 
 function checkcookies() {
 
@@ -21,6 +22,7 @@ function checkcookies() {
         // If we've gotten this far, cookie should be valid, so write a new one.
         $newcookie = implode(" ",$theuser);
         if ($theuser[3] == 1) { $expiretime = time()+31536000; } else { $expiretime = 0; }
+        setcookie ("dkgame", $newcookie, $expiretime, "/", "", 0);
         $onlinequery = doquery("UPDATE {{table}} SET onlinetime=NOW() WHERE id='$theuser[0]' LIMIT 1", "users");
         
     }
